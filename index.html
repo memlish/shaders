@@ -1,138 +1,122 @@
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-		<title>three.js webgl - animation - keyframes</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<link type="text/css" rel="stylesheet" href="main.css">
-		<style>
-			body {
-				background-color: #bfe3dd;
-				color: #000;
-			}
+<html>
 
-			a {
-				color: #2983ff;
-			}
-		</style>
-	</head>
+<head>
+	<meta charset="utf-8">
+	<title>My first three.js app</title>
+	<style>
+		body {
+			margin: 0;
+		}
+	</style>
+</head>
 
-	<body>
+<body>
+	<canvas id="c" width="804" height="929"></canvas>
+	<script src="js/three.js"></script>
+	<script>
+		'use strict';
 
-		<div id="container"></div>
+		/* global THREE */
 
-		<div id="info">
-			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - animation - keyframes<br/>
-			Model: <a href="https://artstation.com/artwork/1AGwX" target="_blank" rel="noopener">Littlest Tokyo</a> by
-			<a href="https://artstation.com/glenatron" target="_blank" rel="noopener">Glen Fox</a>, CC Attribution.
-		</div>
+		function main() {
+			const canvas = document.querySelector('#c');
+			const renderer = new THREE.WebGLRenderer({ canvas });
+			renderer.autoClearColor = false;
 
-		<!-- Import maps polyfill -->
-		<!-- Remove this when import maps will be widely supported -->
-		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
-
-		<script type="importmap">
-			{
-				"imports": {
-					"three": "../build/three.module.js"
-				}
-			}
-		</script>
-
-		<script type="module">
-
-			import * as THREE from 'three';
-
-			import Stats from './jsm/libs/stats.module.js';
-
-			import { OrbitControls } from './jsm/controls/OrbitControls.js';
-			import { RoomEnvironment } from './jsm/environments/RoomEnvironment.js';
-
-			import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
-			import { DRACOLoader } from './jsm/loaders/DRACOLoader.js';
-
-			let mixer;
-
-			const clock = new THREE.Clock();
-			const container = document.getElementById( 'container' );
-
-			const stats = new Stats();
-			container.appendChild( stats.dom );
-
-			const renderer = new THREE.WebGLRenderer( { antialias: true } );
-			renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setSize( window.innerWidth, window.innerHeight );
-			renderer.outputEncoding = THREE.sRGBEncoding;
-			container.appendChild( renderer.domElement );
-
-			const pmremGenerator = new THREE.PMREMGenerator( renderer );
-
+			const camera = new THREE.OrthographicCamera(
+				-1, // left
+				1, // right
+				1, // top
+				-1, // bottom
+				-1, // near,
+				1, // far
+			);
 			const scene = new THREE.Scene();
-			scene.background = new THREE.Color( 0xbfe3dd );
-			scene.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04 ).texture;
+			const plane = new THREE.PlaneBufferGeometry(2, 2);
 
-			const camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 100 );
-			camera.position.set( 5, 2, 8 );
+			const fragmentShader = `
+				#include <common>
 
-			const controls = new OrbitControls( camera, renderer.domElement );
-			controls.target.set( 0, 0.5, 0 );
-			controls.update();
-			controls.enablePan = false;
-			controls.enableDamping = true;
+				uniform vec3 iResolution;
+				uniform float iTime;
+				varying vec2 vUv;
 
-			const dracoLoader = new DRACOLoader();
-			dracoLoader.setDecoderPath( 'js/libs/draco/gltf/' );
+				void mainImage( out vec4 fragColor, in vec2 fragCoord )
+				{
+					vec2 uv = fragCoord/iResolution.xy;
 
-			const loader = new GLTFLoader();
-			loader.setDRACOLoader( dracoLoader );
-			loader.load( 'models/gltf/LittlestTokyo.glb', function ( gltf ) {
+					uv -= .5;
+    				uv.x *= iResolution.x/iResolution.y;
+					// Output to screen
+					float d = length(uv);
+					float r = .2;
+					float c = smoothstep(r, r-0.03, d);
+					float c2 = smoothstep(r/2.,r/2.-0.03, d);
+					//if(d > r/2.) c2 = 1.; else c2 = 0.;
+					vec3 col1 = vec3((c - 1.0) * -1.);
+					
+					vec3 col2 = vec3(c2,0.,0.);
 
-				const model = gltf.scene;
-				model.position.set( 1, 1, 0 );
-				model.scale.set( 0.01, 0.01, 0.01 );
-				scene.add( model );
+					// Output to screen
+					fragColor = vec4(col1+col2,1);
+				}
 
-				mixer = new THREE.AnimationMixer( model );
-				mixer.clipAction( gltf.animations[ 0 ] ).play();
+				void main() {
+					mainImage(gl_FragColor, vUv * iResolution.xy);
+				}
+			`;
 
-				animate();
+			const vertexShader = `
+				varying vec2 vUv;
 
-			}, undefined, function ( e ) {
+				void main() {
+					vUv = uv;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				}
+			`;
 
-				console.error( e );
-
-			} );
-
-
-			window.onresize = function () {
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
+			const uniforms = {
+				iTime: { value: 0 },
+				iResolution: { value: new THREE.Vector3(1, 1, 1) },
 			};
+			const material = new THREE.ShaderMaterial({
+				vertexShader,
+				fragmentShader,
+				uniforms,
+			});
+			scene.add(new THREE.Mesh(plane, material));
 
-
-			function animate() {
-
-				requestAnimationFrame( animate );
-
-				const delta = clock.getDelta();
-
-				mixer.update( delta );
-
-				controls.update();
-
-				stats.update();
-
-				renderer.render( scene, camera );
-
+			function resizeRendererToDisplaySize(renderer) {
+				const canvas = renderer.domElement;
+				const width = canvas.clientWidth;
+				const height = canvas.clientHeight;
+				const needResize = canvas.width !== width || canvas.height !== height;
+				if (needResize) {
+					renderer.setSize(width, height, false);
+				}
+				return needResize;
 			}
 
+			function render(time) {
+				time *= 0.001;  // convert to seconds
 
-		</script>
+				resizeRendererToDisplaySize(renderer);
 
-	</body>
+				const canvas = renderer.domElement;
+				uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+				uniforms.iTime.value = time;
+
+				renderer.render(scene, camera);
+
+				requestAnimationFrame(render);
+			}
+
+			requestAnimationFrame(render);
+		}
+
+		main();
+	</script>
+</body>
 
 </html>
