@@ -46,12 +46,21 @@
 					return j;
 				});
 
+			const texture = new THREE.DataArrayTexture(feature_map_json['data'], 256, 256, 57);
+			texture.format = THREE.RedFormat;
+			texture.needsUpdate = true;
+			console.log(texture)
+
 
 			const vertexShader = `
-				varying vec2 vUv;
+				out vec2 vUv;
+				uniform vec2 size;
+
 				void main() {
-					vUv = uv;
 					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+					vUv.xy = position.xy / size + 0.5;
+					vUv.y = 1.0 - vUv.y; // original data is upside down
 				}
 			`
 
@@ -70,11 +79,8 @@
 
 				void mainImage( out vec4 fragColor, in vec2 fragCoord )
 				{
-					vec2 uv = fragCoord/iResolution.xy;
-					uv -= .5;
-    				uv.x *= iResolution.x/iResolution.y;
-
-					fragColor = texture( feature_map, vec3( fragCoord, 1 ) );
+					vec4 color = texture( feature_map, vec3( vUv, 55) );
+					fragColor = vec4( color.rrr, 1.0 );
 				}
 
 				void main() {
@@ -86,8 +92,9 @@
 				norm_min: { value: feature_map_json['min'] },
 				norm_max: { value: feature_map_json['min'] },
 				iResolution: { value: new THREE.Vector3() },
-				feature_map: { value: feature_map_json['data'] },
+				feature_map: { value: texture },
 				depth: { value: 1 },
+				size: { value: new THREE.Vector2(50, 50) },
 			};
 			const material = new THREE.ShaderMaterial({
 				vertexShader,
