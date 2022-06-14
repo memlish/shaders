@@ -17,17 +17,32 @@
 </head>
 
 <body>
-	<canvas id="c"></canvas>
-	<script src="js/three.js"></script>
-	<script>
-		'use strict';
+	<div>
+		<canvas id="c"></canvas>
+		<div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;">
+			<canvas width="80" height="48" style="width: 80px; height: 48px; display: block;"></canvas>
+			<canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
+			<canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
+		</div>
+	</div>
 
+	<script src="js/three.js"></script>
+	<script type="module">
 		/* global THREE */
+		import Stats from './jsm/libs/stats.module.js';
+		let stats;
+
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+		stats = new Stats();
+		container.appendChild(stats.dom);
+
 
 		async function main() {
 			const canvas = document.querySelector('#c');
 			const renderer = new THREE.WebGLRenderer({ canvas });
 			renderer.autoClearColor = false;
+
 
 			const camera = new THREE.OrthographicCamera(
 				-1, // left
@@ -70,8 +85,9 @@
 				{
 					vec2 uv = fragCoord.xy/iResolution.xy;
 					// uv.x *= iResolution.x/iResolution.y;
-
-					fragColor = texture2D(feature_map, uv);;
+					
+					vec4 color = texture2D(feature_map, uv);
+					fragColor = color;
 				}
 
 				void main() {
@@ -111,6 +127,7 @@
 				uniforms.iTime.value = time;
 
 				renderer.render(scene, camera);
+				stats.update()
 
 				requestAnimationFrame(render);
 			}
