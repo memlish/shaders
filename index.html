@@ -40,46 +40,38 @@
 			const scene = new THREE.Scene();
 			const plane = new THREE.PlaneBufferGeometry(2, 2);
 
-			var feature_map_json = await fetch("./head_feature_map.json")
-				.then(response => {
-					const j = response.json();
-					return j;
-				});
-
-			const texture = new THREE.DataArrayTexture(feature_map_json['data'], 256, 256, 57);
-			texture.format = THREE.RedFormat;
-			console.log(texture)
-
+			const texture = new THREE.TextureLoader().load("./ostap1.jpg");
+			// texture.wrapS = THREE.RepeatWrapping;
+			// texture.wrapT = THREE.RepeatWrapping;
+			// texture.repeat.set(4, 4);
 
 			const vertexShader = `
-				out vec2 vUv;
 				uniform vec2 size;
+
+				attribute vec2 aTextureCoord;
+				varying highp vec2 vTextureCoord;
 
 				void main() {
 					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-
-					vUv.xy = position.xy / size + 0.5;
-					vUv.y = 1.0 - vUv.y; // original data is upside down
+					vTextureCoord = aTextureCoord;
 				}
 			`
 
 			const fragmentShader = `
 				#include <common>
 				
-				precision highp float;
-				precision highp int;
-				precision highp sampler2DArray;
-
 				uniform vec3 iResolution;
 				uniform float iTime;
-				uniform sampler2DArray feature_map;
-				uniform int depth;
-				in vec2 vUv;
+				uniform sampler2D feature_map;
+
+				varying highp vec2 vTextureCoord;
 
 				void mainImage( out vec4 fragColor, in vec2 fragCoord )
 				{
-					vec4 color = texture( feature_map, vec3( vUv, 55.04) );
-					fragColor = vec4( color.rrr + 1.5, 1.0 );
+					vec2 uv = fragCoord.xy/iResolution.xy;
+					// uv.x *= iResolution.x/iResolution.y;
+
+					fragColor = texture2D(feature_map, uv);;
 				}
 
 				void main() {
@@ -88,12 +80,8 @@
 			`;
 			const uniforms = {
 				iTime: { value: 0 },
-				norm_min: { value: feature_map_json['min'] },
-				norm_max: { value: feature_map_json['min'] },
 				iResolution: { value: new THREE.Vector3() },
 				feature_map: { value: texture },
-				depth: { value: 1 },
-				size: { value: new THREE.Vector2(50, 50) },
 			};
 			const material = new THREE.ShaderMaterial({
 				vertexShader,
