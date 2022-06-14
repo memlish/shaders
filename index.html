@@ -48,7 +48,6 @@
 
 			const texture = new THREE.DataArrayTexture(feature_map_json['data'], 256, 256, 57);
 			texture.format = THREE.RedFormat;
-			texture.needsUpdate = true;
 			console.log(texture)
 
 
@@ -79,8 +78,8 @@
 
 				void mainImage( out vec4 fragColor, in vec2 fragCoord )
 				{
-					vec4 color = texture( feature_map, vec3( vUv, 55) );
-					fragColor = vec4( color.rrr, 1.0 );
+					vec4 color = texture( feature_map, vec3( vUv, 55.04) );
+					fragColor = vec4( color.rrr + 1.5, 1.0 );
 				}
 
 				void main() {
