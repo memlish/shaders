@@ -1049,8 +1049,11 @@ float f_2=dot(f3_0,vec4(.03166,.09201,.09316,-.00317))+
 					vec2 uv = fragCoord.xy/iResolution.xy;
 					
 					float[57] features1 = get_feat_vec1(uv);
+                    vec4 fragColor1 = light_field(features1); 
 					float[57] features2 = get_feat_vec2(uv);
+                    vec4 fragColor2 = light_field(features2); 
 					float[57] features3 = get_feat_vec3(uv);
+                    vec4 fragColor3 = light_field(features3); 
 					float[57] features = get_feat_vec(uv);
 					fragColor = light_field(features); 
 				}
