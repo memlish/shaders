@@ -2,113 +2,74 @@
 <html>
 
 <head>
-	<meta charset="utf-8">
-	<title>My first three.js app</title>
-	<style>
-		canvas {
-			width: 100%;
-			height: 100%
-		}
+    <meta charset="utf-8">
+    <title>My first three.js app</title>
+    <style>
+        canvas {
+            width: 100%;
+            height: 100%
+        }
 
-		body {
-			margin: 0;
-		}
-	</style>
+        body {
+            margin: 0;
+        }
+    </style>
 </head>
 
 <body>
-	<div>
-		<canvas id="c"></canvas>
-		<div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;">
-			<canvas width="80" height="48" style="width: 80px; height: 48px; display: block;"></canvas>
-			<canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
-			<canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
-		</div>
-	</div>
+    <div>
+        <canvas id="c"></canvas>
+        <div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;">
+            <canvas width="80" height="48" style="width: 80px; height: 48px; display: block;"></canvas>
+            <canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
+            <canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
+        </div>
+    </div>
 
-	<script src="js/three.js"></script>
-	<script type="module">
-		/* global THREE */
-		import Stats from './jsm/libs/stats.module.js';
-		let stats;
+    <script src="js/three.js"></script>
+    <script type="module">
+        /* global THREE */
+        import Stats from './jsm/libs/stats.module.js';
+        let stats;
 
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		stats = new Stats();
-		container.appendChild(stats.dom);
-
-
-		async function main() {
-			const canvas = document.querySelector('#c');
-			const renderer = new THREE.WebGLRenderer({ canvas });
-			renderer.autoClearColor = false;
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        stats = new Stats();
+        container.appendChild(stats.dom);
 
 
-			const camera = new THREE.OrthographicCamera(
-				-1, // left
-				1, // right
-				1, // top
-				-1, // bottom
-				-1, // near,
-				1, // far
-			);
-			const scene = new THREE.Scene();
-			const plane = new THREE.PlaneBufferGeometry(2, 2);
+        async function main() {
+            const canvas = document.querySelector('#c');
+            const renderer = new THREE.WebGLRenderer({ canvas });
+            renderer.autoClearColor = false;
 
-			var texture_loader = new THREE.TextureLoader();
-			const texture1 = texture_loader.load("./textures/texture1.png");
-			const texture2 = texture_loader.load("./textures/texture2.png");
-			const texture3 = texture_loader.load("./textures/texture3.png");
-			const texture4 = texture_loader.load("./textures/texture4.png");
-			const texture5 = texture_loader.load("./textures/texture5.png");
-			const texture6 = texture_loader.load("./textures/texture6.png");
-			const texture7 = texture_loader.load("./textures/texture7.png");
-			const texture8 = texture_loader.load("./textures/texture8.png");
-			const texture9 = texture_loader.load("./textures/texture9.png");
-			const texture10 = texture_loader.load("./textures/texture10.png");
-			const texture11 = texture_loader.load("./textures/texture11.png");
-			const texture12 = texture_loader.load("./textures/texture12.png");
-			const texture13 = texture_loader.load("./textures/texture13.png");
-			const texture14 = texture_loader.load("./textures/texture14.png");
-			const texture15 = texture_loader.load("./textures/texture15.png");
-			// texture.wrapS = THREE.RepeatWrapping;
-			// texture.wrapT = THREE.RepeatWrapping;
-			// texture.repeat.set(4, 4);
 
-			const vertexShader = `
-				uniform vec2 size;
+            const camera = new THREE.OrthographicCamera(
+                -1, // left
+                1, // right
+                1, // top
+                -1, // bottom
+                -1, // near,
+                1, // far
+            );
+            const scene = new THREE.Scene();
+            const plane = new THREE.PlaneBufferGeometry(2, 2);
 
-				attribute vec2 aTextureCoord;
-				varying highp vec2 vTextureCoord;
+            var texture_loader = new THREE.TextureLoader();
+            const texture1 = texture_loader.load("./textures/texture1.png");
 
+            const vertexShader = `
 				void main() {
 					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-					vTextureCoord = aTextureCoord;
 				}
 			`
 
-			const fragmentShader = `
+            const fragmentShader = `
 				#include <common>
 				
 				uniform vec3 iResolution;
 				uniform float iTime;
 				uniform sampler2D feature_map1;
-				uniform sampler2D feature_map2;
-				uniform sampler2D feature_map3;
-				uniform sampler2D feature_map4;
-				uniform sampler2D feature_map5;
-				uniform sampler2D feature_map6;
-				uniform sampler2D feature_map7;
-				uniform sampler2D feature_map8;
-				uniform sampler2D feature_map9;
-				uniform sampler2D feature_map10;
-				uniform sampler2D feature_map11;
-				uniform sampler2D feature_map12;
-				uniform sampler2D feature_map13;
-				uniform sampler2D feature_map14;
-				uniform sampler2D feature_map15;
-
-				varying highp vec2 vTextureCoord;
 
 				const float min = -0.7065;
 				const float max = 9.6134;
@@ -1006,37 +967,22 @@ float f_2=dot(f3_0,vec4(.03166,.09201,.09316,-.00317))+
 
 				float[57] get_feat_vec(vec2 uv){
 					vec4 col1 = texture2D(feature_map1, uv) * max + min;
-					vec4 col2 = texture2D(feature_map2, uv) * max + min;
-					vec4 col3 = texture2D(feature_map3, uv) * max + min;
-					vec4 col4 = texture2D(feature_map4, uv) * max + min;
-					vec4 col5 = texture2D(feature_map5, uv) * max + min;
-					vec4 col6 = texture2D(feature_map6, uv) * max + min;
-					vec4 col7 = texture2D(feature_map7, uv) * max + min;
-					vec4 col8 = texture2D(feature_map8, uv) * max + min;
-					vec4 col9 = texture2D(feature_map9, uv) * max + min;
-					vec4 col10 = texture2D(feature_map10, uv) * max + min;
-					vec4 col11 = texture2D(feature_map11, uv) * max + min;
-					vec4 col12 = texture2D(feature_map12, uv) * max + min;
-					vec4 col13 = texture2D(feature_map13, uv) * max + min;
-					vec4 col14 = texture2D(feature_map14, uv) * max + min;
-					vec4 col15 = texture2D(feature_map15, uv) * max + min;
-
 
 					return float [57](	col1[0], col1[1], col1[2], col1[3], 
-										col2[0], col2[1], col2[2], col2[3],
-										col3[0], col3[1], col3[2], col3[3],
-										col4[0], col4[1], col4[2], col4[3],
-										col5[0], col5[1], col5[2], col5[3],
-										col6[0], col6[1], col6[2], col6[3],
-										col7[0], col7[1], col7[2], col7[3],
-										col8[0], col8[1], col8[2], col8[3],
-										col9[0], col9[1], col9[2], col9[3],
-										col10[0], col10[1], col10[2], col10[3],
-										col11[0], col11[1], col11[2], col11[3],
-										col12[0], col12[1], col12[2], col12[3],
-										col13[0], col13[1], col13[2], col13[3],
-										col14[0], col14[1], col14[2], col14[3],
-										col15[0]);
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0]);
 				}
 
 				void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -1051,63 +997,49 @@ float f_2=dot(f3_0,vec4(.03166,.09201,.09316,-.00317))+
 					mainImage(gl_FragColor, gl_FragCoord.xy);
 				}
 			`;
-			const uniforms = {
-				iTime: { value: 0 },
-				iResolution: { value: new THREE.Vector3() },
-				feature_map1: { value: texture1 },
-				feature_map2: { value: texture2 },
-				feature_map3: { value: texture3 },
-				feature_map4: { value: texture4 },
-				feature_map5: { value: texture5 },
-				feature_map6: { value: texture6 },
-				feature_map7: { value: texture7 },
-				feature_map8: { value: texture8 },
-				feature_map9: { value: texture9 },
-				feature_map10: { value: texture10 },
-				feature_map11: { value: texture11 },
-				feature_map12: { value: texture12 },
-				feature_map13: { value: texture13 },
-				feature_map14: { value: texture14 },
-				feature_map15: { value: texture15 },
-			};
-			const material = new THREE.ShaderMaterial({
-				vertexShader,
-				fragmentShader,
-				uniforms,
-			});
-			scene.add(new THREE.Mesh(plane, material));
+            const uniforms = {
+                iTime: { value: 0 },
+                iResolution: { value: new THREE.Vector3() },
+                feature_map1: { value: texture1 },
+            };
+            const material = new THREE.ShaderMaterial({
+                vertexShader,
+                fragmentShader,
+                uniforms,
+            });
+            scene.add(new THREE.Mesh(plane, material));
 
-			function resizeRendererToDisplaySize(renderer) {
-				const canvas = renderer.domElement;
-				const width = canvas.clientWidth;
-				const height = canvas.clientHeight;
-				const needResize = canvas.width !== width || canvas.height !== height;
-				if (needResize) {
-					renderer.setSize(width, height, false);
-				}
-				return needResize;
-			}
+            function resizeRendererToDisplaySize(renderer) {
+                const canvas = renderer.domElement;
+                const width = canvas.clientWidth;
+                const height = canvas.clientHeight;
+                const needResize = canvas.width !== width || canvas.height !== height;
+                if (needResize) {
+                    renderer.setSize(width, height, false);
+                }
+                return needResize;
+            }
 
-			function render(time) {
-				time *= 0.001;  // convert to seconds
+            function render(time) {
+                time *= 0.001;  // convert to seconds
 
-				resizeRendererToDisplaySize(renderer);
+                resizeRendererToDisplaySize(renderer);
 
-				const canvas = renderer.domElement;
-				uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
-				uniforms.iTime.value = time;
+                const canvas = renderer.domElement;
+                uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+                uniforms.iTime.value = time;
 
-				renderer.render(scene, camera);
-				stats.update()
+                renderer.render(scene, camera);
+                stats.update()
 
-				requestAnimationFrame(render);
-			}
+                requestAnimationFrame(render);
+            }
 
-			requestAnimationFrame(render);
-		}
+            requestAnimationFrame(render);
+        }
 
-		main();
-	</script>
+        main();
+    </script>
 </body>
 
 </html>
