@@ -964,8 +964,67 @@ float f_2=dot(f3_0,vec4(.03166,.09201,.09316,-.00317))+
     
     return vec4(f_0, f_1, f_2, 1.);
 }
+				float[57] get_feat_vec1(vec2 uv){
+					vec4 col1 = texture2D(feature_map1, uv) * 9. + 0.6;
 
-				float[57] get_feat_vec(vec2 uv){
+					return float [57](	col1[0], col1[1], col1[2], col1[3], 
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0]);
+				}
+
+                float[57] get_feat_vec2(vec2 uv){
+					vec4 col1 = texture2D(feature_map1, uv) * 5. + 0.3;
+
+					return float [57](	col1[0], col1[1], col1[2], col1[3], 
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0]);
+				}
+
+                float[57] get_feat_vec3(vec2 uv){
+					vec4 col1 = texture2D(feature_map1, uv) * 3. + 0.4;
+
+					return float [57](	col1[0], col1[1], col1[2], col1[3], 
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0], col1[1], col1[2], col1[3],
+										col1[0]);
+				}
+
+                float[57] get_feat_vec(vec2 uv){
 					vec4 col1 = texture2D(feature_map1, uv) * max + min;
 
 					return float [57](	col1[0], col1[1], col1[2], col1[3], 
@@ -989,6 +1048,9 @@ float f_2=dot(f3_0,vec4(.03166,.09201,.09316,-.00317))+
 				{
 					vec2 uv = fragCoord.xy/iResolution.xy;
 					
+					float[57] features1 = get_feat_vec1(uv);
+					float[57] features2 = get_feat_vec2(uv);
+					float[57] features3 = get_feat_vec3(uv);
 					float[57] features = get_feat_vec(uv);
 					fragColor = light_field(features); 
 				}
