@@ -817,7 +817,7 @@
                     vec2 uv =  (fragCoord-.5*iResolution.xy)/iResolution.y;
                     // uv.y = 1.-uv.y;
 
-                    vec3 cameraPos = vec3(cos(iTime)* 3.,0,sin(iTime) * 3.);//camera pos animation
+                    vec3 cameraPos = vec3(0.,0.,-3.);//camera pos animation
                     vec3 cameraFocusPoint = vec3(0,0.0,0);//camera look target point animation
                     vec3 cameraDir = normalize(cameraFocusPoint - cameraPos);
 
@@ -845,7 +845,7 @@
 
                     vec4 dist = light_field(concated_feats);
 
-                    for(int i=0; i<2; i++){
+                    for(int i=0; i<1; i++){
                         input_coords = input_coords + d0 * dist[3];
                         m_pointfeatures = big_bilinear_sample_tri_plane(input_coords, texture_atlas);
                         concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
