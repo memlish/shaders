@@ -835,7 +835,7 @@
 				void mainImage( out vec4 fragColor, in vec2 fragCoord )
 				{
                     vec2 uv =  fragCoord.xy / iResolution.xy; // 0 <> 1
-                    uv.y = 1 - y;
+                    uv.y = 1. - uv.y;
                     uv -= .5;
                     uv.x *= iResolution.x / iResolution.y;
                     uv *= 2.;
