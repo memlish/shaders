@@ -773,7 +773,7 @@
                 }
 
                 vec4 get_texture_map(sampler2D texture_map, vec2 uv){
-                    vec4 coords = softwareBilinear(texture_map, vec2(uv.x, 1.-uv.y)) * texture_max + texture_min;// min max to dequantize texture
+                    vec4 coords = texture(texture_map, vec2(uv.x, 1.-uv.y)) * texture_max + texture_min;// min max to dequantize texture
                     return coords;
                 }
 
@@ -835,6 +835,7 @@
 				void mainImage( out vec4 fragColor, in vec2 fragCoord )
 				{
                     vec2 uv =  fragCoord.xy / iResolution.xy; // 0 <> 1
+                    uv.y = 1 - y;
                     uv -= .5;
                     uv.x *= iResolution.x / iResolution.y;
                     uv *= 2.;
