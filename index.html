@@ -775,6 +775,13 @@
                     return coords;
                 }
 
+                float norm(vec3 v)
+                {
+                    return (sqrt(v[0] * v[0]
+                    + v[1] * v[1]
+                    + v[2] * v[2]));
+                }
+
                 float relu(float x){
                 if(x>0.)
                     return x;
@@ -860,7 +867,10 @@
                     t0 /= SPHERE_RADIUS;
                     t1 /= SPHERE_RADIUS;
 
-                    float d = normalize(t0 - t1);
+                    // t0 = normalize(t0);
+                    // t1 = normalize(t1);
+
+                    float d = norm(t0 - t1);
                     //end
 
                     float[25] sh_basis = eval_sh_bases_c(rd);
