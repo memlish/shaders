@@ -841,7 +841,8 @@
                     uv *= 2.;
                     //get ro, rd:
 
-                    vec3 ro = vec3(sin(iTime)*12., 0., cos(iTime)*(-12.));
+                    vec3 ro = vec3(sin(iTime), sin(iTime)*5., cos(iTime)* -1. + sin(iTime) * .5);
+                    ro *= 10.;
                         
                     vec3 lookat = vec3(0.);
                     
