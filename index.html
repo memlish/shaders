@@ -82,7 +82,7 @@
                 #define BLUE vec3(.3,.3,1.)
                 #define GREEN vec3(.3,1.,.3)
                 #define YELLOW vec3(1.,1.,.3)
-                #define SPHERE_RADIUS 6.
+                #define SPHERE_RADIUS 6.5
 
 
                 vec4 light_field(float[89] f){
@@ -695,9 +695,10 @@
 
                 
                 vec2 raySphereIntersect(vec3 r0, vec3 rd, vec3 s0, float sr) {
+                    vec3 tmp = r0 - s0;
                     float a = dot(rd, rd);
-                    float b = 2. * dot(r0, rd);
-                    float c = dot(r0,r0) - (sr * sr);
+                    float b = 2. * dot(tmp, rd);
+                    float c = dot(tmp,tmp) - (sr * sr);
                     float disc = (b * b) - (4. * a * c);
                     if (disc < 0.)
                         return vec2(-42.);
