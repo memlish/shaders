@@ -753,7 +753,9 @@
 
                 vec4 softwareBilinear(sampler2D tex, vec2 uv)
                 {
-                    vec2 texSize = textureSize( tex, 0 );
+                    ivec2 int_texSize = textureSize( tex, 0 );
+                    vec2 texSize = vec2(float(int_texSize.x), float(int_texSize.y));
+
                     vec2 pos = uv * texSize - 0.5;
                     vec2 f = fract(pos);
                     
@@ -771,7 +773,7 @@
                 }
 
                 vec4 get_texture_map(sampler2D texture_map, vec2 uv){
-                    vec4 coords = softwareBilinear(texture_map, vec2(uv.x, 1-uv.y)) * texture_max + texture_min;// min max to dequantize texture
+                    vec4 coords = softwareBilinear(texture_map, vec2(uv.x, 1.-uv.y)) * texture_max + texture_min;// min max to dequantize texture
                     return coords;
                 }
 
@@ -838,7 +840,7 @@
                     uv *= 2.;
                     //get ro, rd:
 
-                    vec3 ro = vec3(sin(iTime)*8., 0., cos(iTime)*(-8.));
+                    vec3 ro = vec3(sin(iTime)*12., 0., cos(iTime)*(-12.));
                         
                     vec3 lookat = vec3(0.);
                     
@@ -857,7 +859,7 @@
                     //Get ray params:
                     vec2 t = raySphereIntersect(ro, rd, vec3(0., 0., 0.), SPHERE_RADIUS);
                     if(t == vec2(-42.)){
-                        outColor = vec4(0., 0., 0., 1);
+                        fragColor = vec4(0., 0., 0., 1.);
                         return;
                     }
 
