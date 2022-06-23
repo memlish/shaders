@@ -696,6 +696,9 @@
                                 
                 vec2 raySphereIntersect(vec3 r0, vec3 rd, vec3 s0, float sr) {
                     float t = dot(s0 - r0, rd);
+                    if (t<0.){
+                        return vec2(-42.);
+                    }
 
                     vec3 t_point = r0 + t*rd;
 
