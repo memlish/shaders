@@ -61,7 +61,7 @@
             const fragmentShader = await fetch('./shaders/fragmentShader.glsl')
                 .then(response => { return response.text(); });
 
-            const texture_min_max = await fetch("./textures/texture_min_max.json")
+            const lf_metadata = await fetch("./textures/metadata.json")
                 .then(response => {
                     const j = response.json();
                     return j;
@@ -76,8 +76,9 @@
                 iTime: { value: 0 },
                 iResolution: { value: new THREE.Vector3() },
 
-                texture_min: { value: texture_min_max.min },
-                texture_max: { value: texture_min_max.max },
+                texture_min: { value: lf_metadata.texture_min },
+                texture_max: { value: lf_metadata.texture_max },
+                radius: { value: lf_metadata.radius },
 
                 xy_texture: { value: xy_texture },
                 xz_texture: { value: xz_texture },
