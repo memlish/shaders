@@ -686,7 +686,7 @@ vec4 softwareBilinear(sampler2D tex, vec2 uv) {
 }
 
 vec4 sample_texture(sampler2D texture_map, vec2 uv) {
-    vec4 coords = softwareBilinear(texture_map, vec2(uv.x, 1. - uv.y)) * texture_max + texture_min;// min max to dequantize texture
+    vec4 coords = texture(texture_map, vec2(uv.x, 1. - uv.y)) * texture_max + texture_min;// min max to dequantize texture
     return coords;
 }
 
