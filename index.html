@@ -27,7 +27,7 @@
     </div>
 
     <script src="js/three.js"></script>
-    <script type="module">
+    <script async type="module">
         /* global THREE */
         import Stats from './jsm/libs/stats.module.js';
         let stats;
@@ -37,90 +37,84 @@
         stats = new Stats();
         container.appendChild(stats.dom);
 
+        const canvas = document.querySelector('#c');
+        const renderer = new THREE.WebGLRenderer({ canvas });
+        renderer.autoClearColor = false;
+        console.log(renderer.capabilities.maxTextureSize)
 
-        async function main() {
-            const canvas = document.querySelector('#c');
-            const renderer = new THREE.WebGLRenderer({ canvas });
-            renderer.autoClearColor = false;
-            console.log(renderer.capabilities.maxTextureSize)
+        const camera = new THREE.OrthographicCamera(
+            -1, // left
+            1, // right
+            1, // top
+            -1, // bottom
+            -1, // near,
+            1, // far
+        );
+        const scene = new THREE.Scene();
+        const plane = new THREE.PlaneBufferGeometry(2, 2);
 
-            const camera = new THREE.OrthographicCamera(
-                -1, // left
-                1, // right
-                1, // top
-                -1, // bottom
-                -1, // near,
-                1, // far
-            );
-            const scene = new THREE.Scene();
-            const plane = new THREE.PlaneBufferGeometry(2, 2);
+        const vertexShader = await fetch('./shaders/vertexShader.glsl')
+            .then(response => { return response.text(); });
 
-            const vertexShader = await fetch('./shaders/vertexShader.glsl')
-                .then(response => { return response.text(); });
+        const fragmentShader = await fetch('./shaders/fragmentShader.glsl')
+            .then(response => { return response.text(); });
 
-            const fragmentShader = await fetch('./shaders/fragmentShader.glsl')
-                .then(response => { return response.text(); });
-
-            const lf_metadata = await fetch("./textures/metadata.json")
-                .then(response => {
-                    const j = response.json();
-                    return j;
-                });
-
-            var texture_loader = new THREE.TextureLoader();
-            const xy_texture = texture_loader.load("./textures/xy_texture.png");
-            const xz_texture = texture_loader.load("./textures/xz_texture.png");
-            const yz_texture = texture_loader.load("./textures/yz_texture.png");
-
-            const uniforms = {
-                iTime: { value: 0 },
-                iResolution: { value: new THREE.Vector3() },
-
-                texture_min: { value: lf_metadata.texture_min },
-                texture_max: { value: lf_metadata.texture_max },
-                radius: { value: lf_metadata.radius },
-
-                xy_texture: { value: xy_texture },
-                xz_texture: { value: xz_texture },
-                yz_texture: { value: yz_texture }
-            };
-            const material = new THREE.ShaderMaterial({
-                vertexShader,
-                fragmentShader,
-                uniforms,
+        const lf_metadata = await fetch("./textures/metadata.json")
+            .then(response => {
+                const j = response.json();
+                return j;
             });
-            scene.add(new THREE.Mesh(plane, material));
 
-            function resizeRendererToDisplaySize(renderer) {
-                const canvas = renderer.domElement;
-                const width = canvas.clientWidth;
-                const height = canvas.clientHeight;
-                const needResize = canvas.width !== width || canvas.height !== height;
-                if (needResize) {
-                    renderer.setSize(width, height, false);
-                }
-                return needResize;
+        var texture_loader = new THREE.TextureLoader();
+        const xy_texture = texture_loader.load("./textures/xy_texture.png");
+        const xz_texture = texture_loader.load("./textures/xz_texture.png");
+        const yz_texture = texture_loader.load("./textures/yz_texture.png");
+
+        const uniforms = {
+            iTime: { value: 0 },
+            iResolution: { value: new THREE.Vector3() },
+
+            texture_min: { value: lf_metadata.texture_min },
+            texture_max: { value: lf_metadata.texture_max },
+            radius: { value: lf_metadata.radius },
+
+            xy_texture: { value: xy_texture },
+            xz_texture: { value: xz_texture },
+            yz_texture: { value: yz_texture }
+        };
+        const material = new THREE.ShaderMaterial({
+            vertexShader,
+            fragmentShader,
+            uniforms,
+        });
+        scene.add(new THREE.Mesh(plane, material));
+
+        function resizeRendererToDisplaySize(renderer) {
+            const canvas = renderer.domElement;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            const needResize = canvas.width !== width || canvas.height !== height;
+            if (needResize) {
+                renderer.setSize(width, height, false);
             }
+            return needResize;
+        }
 
-            function render(time) {
-                time *= 0.001;  // convert to seconds
+        async function render(time) {
+            time *= 0.001;  // convert to seconds
 
-                resizeRendererToDisplaySize(renderer);
+            resizeRendererToDisplaySize(renderer);
 
-                const canvas = renderer.domElement;
-                uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
-                uniforms.iTime.value = time;
+            const canvas = renderer.domElement;
+            uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+            uniforms.iTime.value = time;
 
-                renderer.render(scene, camera);
-                stats.update()
-
-                requestAnimationFrame(render);
-            }
-
+            renderer.render(scene, camera);
+            stats.update()
             requestAnimationFrame(render);
         }
 
-        main();
+        await render();
     </script>
 </body>
 
