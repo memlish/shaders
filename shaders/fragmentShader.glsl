@@ -819,6 +819,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         return;
     }
 
+    input_coords = input_coords + d0 * dist[3];
+    m_pointfeatures = bilinear_sample_tri_plane(input_coords, xy_texture, xz_texture, yz_texture);
+    concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
+    dist = decode_color_dist(concated_feats);
+    if(dist[3] > d) {
+        fragColor = vec4(0., 0., 0., 1.);
+        return;
+    }
+
     // int i;
 
     // #pragma unroll_loop_start
