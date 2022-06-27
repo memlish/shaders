@@ -70,17 +70,35 @@
         const xz_texture = texture_loader.load("./textures/xz_texture.png");
         const yz_texture = texture_loader.load("./textures/yz_texture.png");
 
+        const tex_x = texture_loader.load("./textures/tex_x_image.png");
+        const tex_y = texture_loader.load("./textures/tex_y_image.png");
+        const tex_z = texture_loader.load("./textures/tex_z_image.png");
+
         const uniforms = {
             iTime: { value: 0 },
             iResolution: { value: new THREE.Vector3() },
 
             texture_min: { value: lf_metadata.texture_min },
             texture_max: { value: lf_metadata.texture_max },
+
+            tex_x_min: { value: lf_metadata.tex_x_min },
+            tex_x_max: { value: lf_metadata.tex_x_max },
+
+            tex_y_min: { value: lf_metadata.tex_y_min },
+            tex_y_max: { value: lf_metadata.tex_y_max },
+
+            tex_z_min: { value: lf_metadata.tex_z_min },
+            tex_z_max: { value: lf_metadata.tex_z_max },
+
             radius: { value: lf_metadata.radius },
 
             xy_texture: { value: xy_texture },
             xz_texture: { value: xz_texture },
-            yz_texture: { value: yz_texture }
+            yz_texture: { value: yz_texture },
+
+            tex_x: { value: tex_x },
+            tex_y: { value: tex_y },
+            tex_z: { value: tex_z },
         };
         const material = new THREE.ShaderMaterial({
             vertexShader,
