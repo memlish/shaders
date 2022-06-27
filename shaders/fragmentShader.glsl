@@ -708,34 +708,49 @@ float[32] bilinear_sample_tri_plane(vec3 tex_coords, sampler2D xy_texture, sampl
     vec2 yz = vec2(tex_coords.y, tex_coords.z) * .5 + .5;
 
     float textures_per_atlas = 8.;
+    float step;
+    vec4 xy_f;
+    vec4 xz_f;
+    vec4 yz_f;
 
-    for(float i = 0.; i < textures_per_atlas; i = i + 1.) {
-        float step = (i / textures_per_atlas);
-        vec4 xy_f = sample_texture(xy_texture, vec2((xy.x / textures_per_atlas) + step, xy.y));
-        vec4 xz_f = sample_texture(xz_texture, vec2((xz.x / textures_per_atlas) + step, xz.y));
-        vec4 yz_f = sample_texture(yz_texture, vec2((yz.x / textures_per_atlas) + step, yz.y));
+    vec4 i_res;
+    int int_i;
+    int i;
 
-        vec4 i_res = xy_f + xz_f + yz_f;
+    #pragma unroll_loop_start
+    for(i = 0; i < 8; i++) {
+        step = (float(i) / textures_per_atlas);
+        xy_f = sample_texture(xy_texture, vec2((xy.x / textures_per_atlas) + step, xy.y));
+        xz_f = sample_texture(xz_texture, vec2((xz.x / textures_per_atlas) + step, xz.y));
+        yz_f = sample_texture(yz_texture, vec2((yz.x / textures_per_atlas) + step, yz.y));
 
-        int int_i = int(i);
+        i_res = xy_f + xz_f + yz_f;
+
+        int_i = int(i);
 
         result[int_i * 4] = clamp_relu(i_res[0]);
         result[int_i * 4 + 1] = clamp_relu(i_res[1]);
         result[int_i * 4 + 2] = clamp_relu(i_res[2]);
         result[int_i * 4 + 3] = clamp_relu(i_res[3]);
     }
+    #pragma unroll_loop_end
 
     return result;
 }
 
 float[57] concat_basis_features(float[25] basis, float[32] point_features) {
     float[57] result;
-    for(int i = 0; i < 32; i++) {
+
+    int i;
+
+    #pragma unroll_loop_start
+    for(i = 0; i < 32; i++) {
         result[i] = point_features[i];
         if(i < 25) {
             result[32 + i] = basis[i];
         }
     }
+    #pragma unroll_loop_end
     return result;
 }
 
@@ -804,7 +819,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         return;
     }
 
-    for(int i = 0; i < 2; i++) {
+    int i;
+
+    #pragma unroll_loop_start
+    for(i = 0; i < 2; i++) {
         input_coords = input_coords + d0 * dist[3];
         m_pointfeatures = bilinear_sample_tri_plane(input_coords, xy_texture, xz_texture, yz_texture);
         concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
@@ -814,6 +832,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             return;
         }
     }
+    #pragma unroll_loop_end
 
     if(dist[3] > d) {
         fragColor = vec4(0., 0., 0., 1.);
