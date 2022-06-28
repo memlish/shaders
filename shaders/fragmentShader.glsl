@@ -705,17 +705,17 @@ vec4 sample_texture(sampler2D texture_map, vec2 uv) {
 }
 
 vec4 sample_tex_x(sampler2D texture_map, vec2 uv) {
-    vec4 coords = texture(texture_map, vec2(uv.x, 1. - uv.y)) * tex_x_max + tex_x_min;// min max to dequantize texture
+    vec4 coords = texture(texture_map, vec2(uv.x, uv.y)) * tex_x_max + tex_x_min;// min max to dequantize texture
     return coords;
 }
 
 vec4 sample_tex_y(sampler2D texture_map, vec2 uv) {
-    vec4 coords = texture(texture_map, vec2(uv.x, 1. - uv.y)) * tex_y_max + tex_y_min;// min max to dequantize texture
+    vec4 coords = texture(texture_map, vec2(uv.x, uv.y)) * tex_y_max + tex_y_min;// min max to dequantize texture
     return coords;
 }
 
 vec4 sample_tex_z(sampler2D texture_map, vec2 uv) {
-    vec4 coords = texture(texture_map, vec2(uv.x, 1. - uv.y)) * tex_z_max + tex_z_min;// min max to dequantize texture
+    vec4 coords = texture(texture_map, vec2(uv.x, uv.y)) * tex_z_max + tex_z_min;// min max to dequantize texture
     return coords;
 }
 
@@ -736,9 +736,9 @@ float[32] bilinear_sample_tri_plane(vec3 tex_coords, sampler2D xy_texture, sampl
     vec2 xz = vec2(tex_coords.x, tex_coords.z) * .5 + .5;
     vec2 yz = vec2(tex_coords.y, tex_coords.z) * .5 + .5;
 
-    vec2 xx = vec2(0., tex_coords.x * .5 + .5);
-    vec2 yy = vec2(0., tex_coords.y * .5 + .5);
-    vec2 zz = vec2(0., tex_coords.z * .5 + .5);
+    vec2 xx = vec2(tex_coords.x * .5 + .5, 0.);
+    vec2 yy = vec2(tex_coords.y * .5 + .5, 0.);
+    vec2 zz = vec2(tex_coords.z * .5 + .5, 0.);
 
     float textures_per_atlas = 8.;
     float step;
@@ -761,9 +761,9 @@ float[32] bilinear_sample_tri_plane(vec3 tex_coords, sampler2D xy_texture, sampl
         xz_f = sample_texture(xz_texture, vec2((xz.x / textures_per_atlas) + step, xz.y));
         yz_f = sample_texture(yz_texture, vec2((yz.x / textures_per_atlas) + step, yz.y));
 
-        yz_f_x = sample_tex_x(tex_x, vec2((xx.y / textures_per_atlas) + step, xx.x));
-        xz_f_y = sample_tex_y(tex_y, vec2((yy.y / textures_per_atlas) + step, yy.x));
-        xy_f_z = sample_tex_z(tex_z, vec2((zz.y / textures_per_atlas) + step, zz.x));
+        yz_f_x = sample_tex_x(tex_x, vec2((xx.x / textures_per_atlas) + step, xx.y));
+        xz_f_y = sample_tex_y(tex_y, vec2((yy.x / textures_per_atlas) + step, yy.y));
+        xy_f_z = sample_tex_z(tex_z, vec2((zz.x / textures_per_atlas) + step, zz.y));
 
         i_res = xy_f*xy_f_z + xz_f*xz_f_y + yz_f*yz_f_x;
 
