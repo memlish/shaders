@@ -762,8 +762,8 @@ float[32] bilinear_sample_tri_plane(vec3 tex_coords, sampler2D xy_texture, sampl
         yz_f = sample_texture(yz_texture, vec2((yz.x / textures_per_atlas) + step, yz.y));
 
         yz_f_x = sample_tex_x(tex_x, vec2((xx.y / textures_per_atlas) + step, xx.x));
-        xz_f_y = sample_tex_y(tex_y, vec2((yy.y / textures_per_atlas) + step, yz.x));
-        xy_f_z = sample_tex_z(tex_z, vec2((zz.y / textures_per_atlas) + step, yz.x));
+        xz_f_y = sample_tex_y(tex_y, vec2((yy.y / textures_per_atlas) + step, yy.x));
+        xy_f_z = sample_tex_z(tex_z, vec2((zz.y / textures_per_atlas) + step, zz.x));
 
         i_res = xy_f*xy_f_z + xz_f*xz_f_y + yz_f*yz_f_x;
 
