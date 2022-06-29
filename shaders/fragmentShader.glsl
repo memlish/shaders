@@ -730,6 +730,8 @@ float clamp_relu(float x) {
 }
 
 float[32] bilinear_sample_tri_plane(vec3 tex_coords, sampler2D xy_texture, sampler2D xz_texture, sampler2D yz_texture) {
+    tex_coords = tex_coords * 0.98;
+
     float[32] result;
 
     vec2 xy = vec2(tex_coords.x, tex_coords.y) * .5 + .5;
