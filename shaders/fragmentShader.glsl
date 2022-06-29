@@ -1,7 +1,7 @@
 #include <common>
 
-uniform vec3 iResolution;
 uniform float iTime;
+uniform vec3 iResolution;
 
 uniform float texture_min;
 uniform float texture_max;
@@ -700,7 +700,7 @@ vec4 softwareBilinear(sampler2D tex, vec2 uv) {
 }
 
 vec4 sample_texture(sampler2D texture_map, vec2 uv) {
-    vec4 coords = texture(texture_map, vec2(uv.x, 1. - uv.y)) * texture_max + texture_min;// min max to dequantize texture
+    vec4 coords = softwareBilinear(texture_map, vec2(uv.x, 1. - uv.y)) * texture_max + texture_min;// min max to dequantize texture
     return coords;
 }
 
@@ -760,9 +760,9 @@ float[32] bilinear_sample_tri_plane(vec3 tex_coords, sampler2D xy_texture, sampl
         xz_f = sample_texture(xz_texture, vec2((xz.x / textures_per_atlas) + step, xz.y));
         yz_f = sample_texture(yz_texture, vec2((yz.x / textures_per_atlas) + step, yz.y));
 
-        yz_f_x = sample_tex_x(tex_x, vec2((xx.x / textures_per_atlas) + step, xx.y));
-        xz_f_y = sample_tex_y(tex_y, vec2((yy.x / textures_per_atlas) + step, yy.y));
-        xy_f_z = sample_tex_z(tex_z, vec2((zz.x / textures_per_atlas) + step, zz.y));
+        yz_f_x = sample_tex_x(tex_x, vec2((xx.x / textures_per_atlas) + step, 0.));
+        xz_f_y = sample_tex_y(tex_y, vec2((yy.x / textures_per_atlas) + step, 0.));
+        xy_f_z = sample_tex_z(tex_z, vec2((zz.x / textures_per_atlas) + step, 0.));
 
         i_res = xy_f*xy_f_z + xz_f*xz_f_y + yz_f*yz_f_x;
 
