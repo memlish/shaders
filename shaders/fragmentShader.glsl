@@ -705,17 +705,17 @@ vec4 sample_texture(sampler2D texture_map, vec2 uv) {
 }
 
 vec4 sample_tex_x(sampler2D texture_map, vec2 uv) {
-    vec4 coords = texture(texture_map, vec2(uv.x, uv.y)) * tex_x_max + tex_x_min;// min max to dequantize texture
+    vec4 coords = softwareBilinear(texture_map, vec2(uv.x, uv.y)) * tex_x_max + tex_x_min;// min max to dequantize texture
     return coords;
 }
 
 vec4 sample_tex_y(sampler2D texture_map, vec2 uv) {
-    vec4 coords = texture(texture_map, vec2(uv.x, uv.y)) * tex_y_max + tex_y_min;// min max to dequantize texture
+    vec4 coords = softwareBilinear(texture_map, vec2(uv.x, uv.y)) * tex_y_max + tex_y_min;// min max to dequantize texture
     return coords;
 }
 
 vec4 sample_tex_z(sampler2D texture_map, vec2 uv) {
-    vec4 coords = texture(texture_map, vec2(uv.x, uv.y)) * tex_z_max + tex_z_min;// min max to dequantize texture
+    vec4 coords = softwareBilinear(texture_map, vec2(uv.x, uv.y)) * tex_z_max + tex_z_min;// min max to dequantize texture
     return coords;
 }
 
@@ -751,7 +751,6 @@ float[32] bilinear_sample_tri_plane(vec3 tex_coords, sampler2D xy_texture, sampl
     vec4 xy_f_z;
 
     vec4 i_res;
-    int int_i;
     int i;
 
     #pragma unroll_loop_start
@@ -767,12 +766,10 @@ float[32] bilinear_sample_tri_plane(vec3 tex_coords, sampler2D xy_texture, sampl
 
         i_res = xy_f*xy_f_z + xz_f*xz_f_y + yz_f*yz_f_x;
 
-        int_i = int(i);
-
-        result[int_i * 4] = clamp_relu(i_res[0]);
-        result[int_i * 4 + 1] = clamp_relu(i_res[1]);
-        result[int_i * 4 + 2] = clamp_relu(i_res[2]);
-        result[int_i * 4 + 3] = clamp_relu(i_res[3]);
+        result[i * 4] = clamp_relu(i_res[0]);
+        result[i * 4 + 1] = clamp_relu(i_res[1]);
+        result[i * 4 + 2] = clamp_relu(i_res[2]);
+        result[i * 4 + 3] = clamp_relu(i_res[3]);
     }
     #pragma unroll_loop_end
 
