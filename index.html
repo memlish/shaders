@@ -6,8 +6,8 @@
     <title>My first three.js app</title>
     <style>
         canvas {
-            width: 128px;
-            height: 128px;
+            width: 512px;
+            height: 512px;
         }
 
         body {
@@ -26,11 +26,22 @@
         </div>
     </div>
 
-    <script src="js/three.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "./js/three.module.js"
+            }
+        }
+    </script>
+
+    <!-- <script src="./js/three.js"></script> -->
     <script async type="module">
         /* global THREE */
+        import * as THREE from 'three';
         import Stats from './jsm/libs/stats.module.js';
-        let stats;
+        import { OrbitControls } from './jsm/controls/OrbitControls.js';
+
+        let stats, controls;
 
         const container = document.createElement('div');
         document.body.appendChild(container);
@@ -50,6 +61,11 @@
             -1, // near,
             1, // far
         );
+
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 0, 0);
+        
+
         const scene = new THREE.Scene();
         const plane = new THREE.PlaneBufferGeometry(2, 2);
 
@@ -99,6 +115,11 @@
             tex_x: { value: tex_x },
             tex_y: { value: tex_y },
             tex_z: { value: tex_z },
+
+            iMouse: {
+                type: "v2",
+                value: new THREE.Vector2()
+            }
         };
         const material = new THREE.ShaderMaterial({
             vertexShader,
@@ -118,6 +139,11 @@
             return needResize;
         }
 
+        // document.onmousemove = function(e) {
+        //     uniforms.iMouse.value.x = e.pageX / window.innerWidth;
+        //     uniforms.iMouse.value.y = e.pageY / window.innerHeight;
+        // }
+
         async function render(time) {
             time *= 0.001;  // convert to seconds
 
@@ -129,6 +155,7 @@
 
             renderer.render(scene, camera);
             stats.update()
+            controls.update();
             requestAnimationFrame(render);
         }
 
