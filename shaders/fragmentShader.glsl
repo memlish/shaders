@@ -851,46 +851,46 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     t0 /= radius;
     t1 /= radius;
 
-    // float d = length(t0 - t1);
-    // //end
+    float d = length(t0 - t1);
+    //end
 
-    // float[25] sh_basis = eval_sh_bases_c(rd);
+    float[25] sh_basis = eval_sh_bases_c(rd);
 
-    // vec3 d0 = rd * 0.5;
-    // vec3 input_coords = t0;
+    vec3 d0 = rd * 0.5;
+    vec3 input_coords = t0;
 
-    // float[32] m_pointfeatures = bilinear_sample_tri_plane(input_coords, xy_texture, xz_texture, yz_texture);
+    float[32] m_pointfeatures = bilinear_sample_tri_plane(input_coords, xy_texture, xz_texture, yz_texture);
 
-    // float[57] concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
+    float[57] concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
 
-    // vec4 dist = decode_color_dist(concated_feats);
+    vec4 dist = decode_color_dist(concated_feats);
 
-    // if(dist[3] > d) {
-    //     fragColor = vec4(0., 0., 0., 1.);
-    //     return;
-    // }
+    if(dist[3] > d) {
+        fragColor = vec4(0., 0., 0., 1.);
+        return;
+    }
 
-    // int i;
+    int i;
 
-    // #pragma unroll_loop_start
-    // for(i = 0; i < 2; i++) {
-    //     input_coords = input_coords + d0 * dist[3];
-    //     m_pointfeatures = bilinear_sample_tri_plane(input_coords, xy_texture, xz_texture, yz_texture);
-    //     concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
-    //     dist = decode_color_dist(concated_feats);
-    //     if(dist[3] > d) {
-    //         fragColor = vec4(0., 0., 0., 1.);
-    //         return;
-    //     }
-    // }
-    // #pragma unroll_loop_end
+    #pragma unroll_loop_start
+    for(i = 0; i < 2; i++) {
+        input_coords = input_coords + d0 * dist[3];
+        m_pointfeatures = bilinear_sample_tri_plane(input_coords, xy_texture, xz_texture, yz_texture);
+        concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
+        dist = decode_color_dist(concated_feats);
+        if(dist[3] > d) {
+            fragColor = vec4(0., 0., 0., 1.);
+            return;
+        }
+    }
+    #pragma unroll_loop_end
 
-    // vec3 targetcoords = input_coords + d0 * dist[3];
-    // float[32] t_pointfeatures = bilinear_sample_tri_plane(targetcoords, xy_texture, xz_texture, yz_texture);
-    // concated_feats = concat_basis_features(sh_basis, t_pointfeatures);
-    // vec4 color = decode_color_dist(concated_feats);
+    vec3 targetcoords = input_coords + d0 * dist[3];
+    float[32] t_pointfeatures = bilinear_sample_tri_plane(targetcoords, xy_texture, xz_texture, yz_texture);
+    concated_feats = concat_basis_features(sh_basis, t_pointfeatures);
+    vec4 color = decode_color_dist(concated_feats);
 
-    fragColor = vec4(t0.rgb, 1.);
+    fragColor = vec4(color.rgb, 1.);
 }
 
 void main() {
