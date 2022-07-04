@@ -6,8 +6,8 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			canvas {
-				width: 1024px;
-				height: 1024px;
+				width: 512px;
+				height: 512px;
 			}
 			body {
 				margin: 0%;
@@ -40,9 +40,16 @@
 			import * as THREE from 'three';
 
 			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import Stats from './jsm/libs/stats.module.js';
 
-			let camera, controls, scene, renderer, uniforms, canvas;
+			let camera, stats, controls, scene, renderer, uniforms, canvas;
 			let backgroundScene, backgroundCamera, backgroundTexture;
+
+			const container = document.createElement('div');
+			document.body.appendChild(container);
+
+			stats = new Stats();
+			container.appendChild(stats.dom);
 
 			init();
 			// render(); // remove when using next line for animation loop (requestAnimationFrame)
@@ -51,8 +58,17 @@
 			async function init() {
 				scene = new THREE.Scene();
 				// scene.background = new THREE.Color( 0xff4444 );
-				const loader = new THREE.TextureLoader();
-				scene.background = loader.load( 'ostap_at_the_office.jpg' );
+				const loader = new THREE.CubeTextureLoader();
+				const texture = loader.load([
+					'./resources/posx.jpg',
+					'./resources/negx.jpg',
+					'./resources/posy.jpg',
+					'./resources/negy.jpg',
+					'./resources/posz.jpg',
+					'./resources/negz.jpg',
+				]);
+				scene.background = texture;
+				// scene.background = loader.load( 'ostap_at_the_office.jpg' );
 
 				canvas = document.querySelector('#c');
 				console.log(canvas)
@@ -182,9 +198,8 @@
 				requestAnimationFrame( animate );
 
 				resizeRendererToDisplaySize(renderer);
-
 				
-
+				stats.update();
 				controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
 				const canvas = renderer.domElement;
 				camera.aspect = canvas.clientWidth / canvas.clientHeight;
