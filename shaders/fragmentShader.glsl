@@ -27,6 +27,8 @@ uniform sampler2D tex_z;
 
 uniform vec3 cam_position;
 uniform float cam_zoom;
+uniform float cam_fov;
+#define fov_ratio 120.
 
 #define BLACK vec3(0)
 #define WHITE vec3(1)
@@ -804,14 +806,13 @@ vec3 rot_ro(){
     // vec3 ro = vec3(0, 0, sin(time)+2.);
     // vec3 ro = vec3(cos(time), 0, sin(time));
     vec3 ro = vec3(cam_position.x, cam_position.y, cam_position.z);
-    // ro *= .3;
     // ro *= .5;
     return ro;
 }
 
 vec3 get_ray_dir(vec2 uv, vec3 ro, vec3 lookat){
     // float zoom = 1.;
-    float zoom = float(cam_zoom);
+    float zoom = float(cam_zoom) / (cam_fov/fov_ratio);;
     vec3 f = normalize(lookat - ro);
     vec3 r = normalize(cross(vec3(0., 1., 0.), f));
     vec3 u = cross(f, r);
@@ -838,7 +839,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     //Get ray params:
     vec2 t = ray_sphere_intersect(ro, rd, sphere_center, radius);
     if(t == vec2(-42.)) {
-        fragColor = vec4(0., 0., 0., 0.);
+        fragColor = vec4(0., 0., 0., 1.);
         return;
     }
 
@@ -847,10 +848,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
     t0 -= lookat;
     t1 -= lookat;
-    // vec3 col = normalize(t0 - sphere_center);
     t0 /= radius;
     t1 /= radius;
-
 
     float d = length(t0 - t1);
     //end

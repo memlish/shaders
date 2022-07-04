@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>My first three.js app</title>
+    <style>
+        canvas {
+            width: 256px;
+            height: 256px;
+        }
+
+        body {
+            margin: 5%;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <canvas id="c"></canvas>
+        <div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;">
+            <canvas width="80" height="48" style="width: 80px; height: 48px; display: block;"></canvas>
+            <canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
+            <canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "./js/three.module.js"
+            }
+        }
+    </script>
+
+    <!-- <script src="./js/three.js"></script> -->
+    <script async type="module">
+        /* global THREE */
+        import * as THREE from 'three';
+        import Stats from './jsm/libs/stats.module.js';
+        import { OrbitControls } from './jsm/controls/OrbitControls.js';
+
+        let stats, controls;
+
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        stats = new Stats();
+        container.appendChild(stats.dom);
+
+        const canvas = document.querySelector('#c');
+        const renderer = new THREE.WebGLRenderer({ canvas });
+        renderer.autoClearColor = false;
+        console.log(renderer.capabilities.maxTextureSize)
+
+        const fake_camera = new THREE.OrthographicCamera(
+            -1, // left
+            1, // right
+            1, // top
+            -1, // bottom
+            -1, // near,
+            1, // far
+        );
+        fake_camera.position.set( 0, 0, -0.5 );
+
+        const camera = new THREE.OrthographicCamera(
+            -1, // left
+            1, // right
+            1, // top
+            -1, // bottom
+            -1, // near,
+            1, // far
+        );
+        camera.position.set( 0, 0, -0.5 );
+
+        controls = new OrbitControls(fake_camera, renderer.domElement);
+        controls.target.set(0, 0, 0);
+        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+        controls.dampingFactor = 0.05;
+        
+
+        const scene = new THREE.Scene();
+        const plane = new THREE.PlaneBufferGeometry(2, 2);
+
+        const vertexShader = await fetch('./shaders/vertexShader.glsl')
+            .then(response => { return response.text(); });
+
+        const fragmentShader = await fetch('./shaders/fragmentShader.glsl')
+            .then(response => { return response.text(); });
+
+        const lf_metadata = await fetch("./textures/metadata.json")
+            .then(response => {
+                const j = response.json();
+                return j;
+            });
+
+        var texture_loader = new THREE.TextureLoader();
+        const xy_texture = texture_loader.load("./textures/xy_texture.png");
+        const xz_texture = texture_loader.load("./textures/xz_texture.png");
+        const yz_texture = texture_loader.load("./textures/yz_texture.png");
+
+        const tex_x = texture_loader.load("./textures/tex_x_image.png");
+        const tex_y = texture_loader.load("./textures/tex_y_image.png");
+        const tex_z = texture_loader.load("./textures/tex_z_image.png");
+
+        const uniforms = {
+            iTime: { value: 0 },
+            iResolution: { value: new THREE.Vector3() },
+
+            texture_min: { value: lf_metadata.texture_min },
+            texture_max: { value: lf_metadata.texture_max },
+
+            tex_x_min: { value: lf_metadata.tex_x_min },
+            tex_x_max: { value: lf_metadata.tex_x_max },
+
+            tex_y_min: { value: lf_metadata.tex_y_min },
+            tex_y_max: { value: lf_metadata.tex_y_max },
+
+            tex_z_min: { value: lf_metadata.tex_z_min },
+            tex_z_max: { value: lf_metadata.tex_z_max },
+
+            radius: { value: lf_metadata.radius },
+
+            xy_texture: { value: xy_texture },
+            xz_texture: { value: xz_texture },
+            yz_texture: { value: yz_texture },
+
+            tex_x: { value: tex_x },
+            tex_y: { value: tex_y },
+            tex_z: { value: tex_z },
+
+            cam_position: {
+                        type: "v3",
+                        value: new THREE.Vector3()
+                    },
+
+            cam_zoom: { value: 1. },
+        };
+        const material = new THREE.ShaderMaterial({
+            vertexShader,
+            fragmentShader,
+            uniforms,
+            transparent: true
+        });
+        scene.add(new THREE.Mesh(plane, material));
+
+        window.addEventListener( 'resize', onWindowResize );
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+        }
+
+
+        function resizeRendererToDisplaySize(renderer) {
+            const canvas = renderer.domElement;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            const needResize = canvas.width !== width || canvas.height !== height;
+            if (needResize) {
+                renderer.setSize(width, height, false);
+            }
+            return needResize;
+        }
+
+        async function render(time) {
+            time *= 0.001;  // convert to seconds
+
+            resizeRendererToDisplaySize(renderer);
+
+            const canvas = renderer.domElement;
+            uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+            uniforms.iTime.value = time;
+            uniforms.cam_position.value.set(fake_camera.position.x,  fake_camera.position.y, fake_camera.position.z);
+            uniforms.cam_zoom.value = fake_camera.zoom;
+            // console.log(fake_camera.zoom)
+
+            renderer.render(scene, camera);
+            stats.update()
+            controls.update();
+            requestAnimationFrame(render);
+        }
+
+        await render();
+    </script>
+</body>
+
+</html>

@@ -1,187 +1,205 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - orbit controls</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			canvas {
+				width: 1024px;
+				height: 1024px;
+			}
+			body {
+				margin: 0%;
+			}
+		</style>
+	</head>
 
-<head>
-    <meta charset="utf-8">
-    <title>My first three.js app</title>
-    <style>
-        canvas {
-            width: 256px;
-            height: 256px;
-        }
+	<body>
+		<div>
+			<canvas id="c"></canvas>
+			<div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;">
+				<canvas width="80" height="48" style="width: 80px; height: 48px; display: block;"></canvas>
+				<canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
+				<canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
+			</div>
+		</div>
 
-        body {
-            margin: 5%;
-        }
-    </style>
-</head>
+		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
 
-<body>
-    <div>
-        <canvas id="c"></canvas>
-        <div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;">
-            <canvas width="80" height="48" style="width: 80px; height: 48px; display: block;"></canvas>
-            <canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
-            <canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
-        </div>
-    </div>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./js/three.module.js"
+				}
+			}
+		</script>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "./js/three.module.js"
-            }
-        }
-    </script>
+		<script type="module">
 
-    <!-- <script src="./js/three.js"></script> -->
-    <script async type="module">
-        /* global THREE */
-        import * as THREE from 'three';
-        import Stats from './jsm/libs/stats.module.js';
-        import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import * as THREE from 'three';
 
-        let stats, controls;
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
 
-        const container = document.createElement('div');
-        document.body.appendChild(container);
-        stats = new Stats();
-        container.appendChild(stats.dom);
+			let camera, controls, scene, renderer, uniforms, canvas;
+			let backgroundScene, backgroundCamera, backgroundTexture;
 
-        const canvas = document.querySelector('#c');
-        const renderer = new THREE.WebGLRenderer({ canvas });
-        renderer.autoClearColor = false;
-        console.log(renderer.capabilities.maxTextureSize)
+			init();
+			// render(); // remove when using next line for animation loop (requestAnimationFrame)
+			animate();
 
-        const fake_camera = new THREE.OrthographicCamera(
-            -1, // left
-            1, // right
-            1, // top
-            -1, // bottom
-            -1, // near,
-            1, // far
-        );
-        fake_camera.position.set( 0, 0, -0.5 );
+			async function init() {
+				scene = new THREE.Scene();
+				// scene.background = new THREE.Color( 0xff4444 );
+				const loader = new THREE.TextureLoader();
+				scene.background = loader.load( 'ostap_at_the_office.jpg' );
 
-        const camera = new THREE.OrthographicCamera(
-            -1, // left
-            1, // right
-            1, // top
-            -1, // bottom
-            -1, // near,
-            1, // far
-        );
-        camera.position.set( 0, 0, -0.5 );
+				canvas = document.querySelector('#c');
+				console.log(canvas)
+				renderer = new THREE.WebGLRenderer( { canvas, antialias: true } );
+				renderer.autoClearColor = false;
+				renderer.setSize( canvas.clientWidth, canvas.clientHeight );
 
-        controls = new OrbitControls(fake_camera, renderer.domElement);
-        controls.target.set(0, 0, 0);
-        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-        controls.dampingFactor = 0.05;
-        
+				const cam_fov = 30;
+				camera = new THREE.PerspectiveCamera( cam_fov, canvas.clientWidth / canvas.clientHeight, 1, 0 );
+				camera.position.set( 0, 0, -2 );
+				camera.aspect = canvas.clientWidth / canvas.clientHeight;
+				camera.updateProjectionMatrix();
 
-        const scene = new THREE.Scene();
-        const plane = new THREE.PlaneBufferGeometry(2, 2);
+				// controls
 
-        const vertexShader = await fetch('./shaders/vertexShader.glsl')
-            .then(response => { return response.text(); });
+				controls = new OrbitControls( camera, renderer.domElement );
+				controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+				controls.dampingFactor = 0.05;
 
-        const fragmentShader = await fetch('./shaders/fragmentShader.glsl')
-            .then(response => { return response.text(); });
+				controls.maxPolarAngle = Math.PI;// / 2;
+				controls.enablePan = false;
 
-        const lf_metadata = await fetch("./textures/metadata.json")
-            .then(response => {
-                const j = response.json();
-                return j;
-            });
+				// world
 
-        var texture_loader = new THREE.TextureLoader();
-        const xy_texture = texture_loader.load("./textures/xy_texture.png");
-        const xz_texture = texture_loader.load("./textures/xz_texture.png");
-        const yz_texture = texture_loader.load("./textures/yz_texture.png");
+                const vertexShader = await fetch('./shaders/vertexShader.glsl')
+                    .then(response => { return response.text(); });
 
-        const tex_x = texture_loader.load("./textures/tex_x_image.png");
-        const tex_y = texture_loader.load("./textures/tex_y_image.png");
-        const tex_z = texture_loader.load("./textures/tex_z_image.png");
+                const fragmentShader = await fetch('./shaders/fragmentShader.glsl')
+                    .then(response => { return response.text(); });
 
-        const uniforms = {
-            iTime: { value: 0 },
-            iResolution: { value: new THREE.Vector3() },
+                const lf_metadata = await fetch("./textures/metadata.json")
+                    .then(response => {
+                        const j = response.json();
+                        return j;
+                    });
 
-            texture_min: { value: lf_metadata.texture_min },
-            texture_max: { value: lf_metadata.texture_max },
+                var texture_loader = new THREE.TextureLoader();
+                const xy_texture = texture_loader.load("./textures/xy_texture.png");
+                const xz_texture = texture_loader.load("./textures/xz_texture.png");
+                const yz_texture = texture_loader.load("./textures/yz_texture.png");
 
-            tex_x_min: { value: lf_metadata.tex_x_min },
-            tex_x_max: { value: lf_metadata.tex_x_max },
+                const tex_x = texture_loader.load("./textures/tex_x_image.png");
+                const tex_y = texture_loader.load("./textures/tex_y_image.png");
+                const tex_z = texture_loader.load("./textures/tex_z_image.png");
 
-            tex_y_min: { value: lf_metadata.tex_y_min },
-            tex_y_max: { value: lf_metadata.tex_y_max },
+                uniforms = {
+                    iTime: { value: 0 },
+                    iResolution: { value: new THREE.Vector3() },
 
-            tex_z_min: { value: lf_metadata.tex_z_min },
-            tex_z_max: { value: lf_metadata.tex_z_max },
+                    texture_min: { value: lf_metadata.texture_min },
+                    texture_max: { value: lf_metadata.texture_max },
 
-            radius: { value: lf_metadata.radius },
+                    tex_x_min: { value: lf_metadata.tex_x_min },
+                    tex_x_max: { value: lf_metadata.tex_x_max },
 
-            xy_texture: { value: xy_texture },
-            xz_texture: { value: xz_texture },
-            yz_texture: { value: yz_texture },
+                    tex_y_min: { value: lf_metadata.tex_y_min },
+                    tex_y_max: { value: lf_metadata.tex_y_max },
 
-            tex_x: { value: tex_x },
-            tex_y: { value: tex_y },
-            tex_z: { value: tex_z },
+                    tex_z_min: { value: lf_metadata.tex_z_min },
+                    tex_z_max: { value: lf_metadata.tex_z_max },
 
-            cam_position: {
+                    radius: { value: lf_metadata.radius },
+
+                    xy_texture: { value: xy_texture },
+                    xz_texture: { value: xz_texture },
+                    yz_texture: { value: yz_texture },
+
+                    tex_x: { value: tex_x },
+                    tex_y: { value: tex_y },
+                    tex_z: { value: tex_z },
+
+                    cam_position: {
                         type: "v3",
                         value: new THREE.Vector3()
                     },
 
-            cam_zoom: { value: 1. },
-        };
-        const material = new THREE.ShaderMaterial({
-            vertexShader,
-            fragmentShader,
-            uniforms,
-        });
-        scene.add(new THREE.Mesh(plane, material));
+					cam_zoom: { value: 1. },
+					cam_fov: { value: cam_fov },
+                };
 
-        window.addEventListener( 'resize', onWindowResize );
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize( window.innerWidth, window.innerHeight );
-        }
+				const geometry = new THREE.SphereGeometry(lf_metadata.radius, 32, 32);
 
+                const material = new THREE.ShaderMaterial({
+                    vertexShader,
+                    fragmentShader,
+                    uniforms,
+                    transparent: true
+                });
 
-        function resizeRendererToDisplaySize(renderer) {
-            const canvas = renderer.domElement;
-            const width = canvas.clientWidth;
-            const height = canvas.clientHeight;
-            const needResize = canvas.width !== width || canvas.height !== height;
-            if (needResize) {
-                renderer.setSize(width, height, false);
-            }
-            return needResize;
-        }
+                const mesh = new THREE.Mesh( geometry, material );
+                mesh.position.x = 0;
+                mesh.position.y = 0;
+                mesh.position.z = 0;
+                mesh.updateMatrix();
+                mesh.matrixAutoUpdate = false;
+                scene.add( mesh );
 
-        async function render(time) {
-            time *= 0.001;  // convert to seconds
+				scene.add( new THREE.AxesHelper( 10 ) );
 
-            resizeRendererToDisplaySize(renderer);
+				// window.addEventListener( 'resize', onWindowResize );
 
-            const canvas = renderer.domElement;
-            uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
-            uniforms.iTime.value = time;
-            uniforms.cam_position.value.set(fake_camera.position.x,  fake_camera.position.y, fake_camera.position.z);
-            uniforms.cam_zoom.value = fake_camera.zoom;
-            // console.log(fake_camera.zoom)
+                console.log(camera)
 
-            renderer.render(scene, camera);
-            stats.update()
-            controls.update();
-            requestAnimationFrame(render);
-        }
+			}
 
-        await render();
-    </script>
-</body>
+			function resizeRendererToDisplaySize(renderer) {
+				const canvas = renderer.domElement;
+				const width = canvas.clientWidth;
+				const height = canvas.clientHeight;
+				const needResize = canvas.width !== width || canvas.height !== height;
+				if (needResize) {
+					renderer.setSize(width, height, false);
+				}
+				return needResize;
+			}
 
+			// function onWindowResize() {
+
+			// 	camera.aspect = window.innerWidth / window.innerHeight;
+			// 	camera.updateProjectionMatrix();
+
+			// 	renderer.setSize( window.innerWidth, window.innerHeight );
+
+			// }
+
+			function animate() {
+				requestAnimationFrame( animate );
+
+				resizeRendererToDisplaySize(renderer);
+
+				
+
+				controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+				const canvas = renderer.domElement;
+				camera.aspect = canvas.clientWidth / canvas.clientHeight;
+				camera.updateProjectionMatrix();
+            	uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+				uniforms.cam_position.value.set(camera.position.x,  camera.position.y, camera.position.z*-1);
+				uniforms.cam_zoom.value = camera.zoom;
+				render();
+			}
+
+			function render() {
+				renderer.render( scene, camera );
+			}
+
+		</script>
+
+	</body>
 </html>
