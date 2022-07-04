@@ -839,7 +839,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     //Get ray params:
     vec2 t = ray_sphere_intersect(ro, rd, sphere_center, radius);
     if(t == vec2(-42.)) {
-        fragColor = vec4(0., 0., 0., 1.);
+        fragColor = vec4(0., 0., 0., 0.);
         return;
     }
 
@@ -866,7 +866,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec4 dist = decode_color_dist(concated_feats);
 
     if(dist[3] > d) {
-        fragColor = vec4(0., 0., 0., 1.);
+        fragColor = vec4(0., 0., 0., 0.);
         return;
     }
 
@@ -879,7 +879,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
         dist = decode_color_dist(concated_feats);
         if(dist[3] > d) {
-            fragColor = vec4(0., 0., 0., 1.);
+            fragColor = vec4(0., 0., 0., 0.);
             return;
         }
     }
