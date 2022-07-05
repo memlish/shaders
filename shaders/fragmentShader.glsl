@@ -751,7 +751,7 @@ float clamp_relu(float x) {
 }
 
 float[32] bilinear_sample_tri_plane(vec3 tex_coords, sampler2D xy_texture, sampler2D xz_texture, sampler2D yz_texture) {
-    // tex_coords = tex_coords * 0.98;
+    tex_coords = tex_coords * 0.98;
 
     float[32] result;
 
@@ -873,27 +873,26 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float[25] sh_basis = eval_sh_bases_c(rd);
 
     float dist_scale = 1.;
-    vec3 d0 = rd * dist_scale;
-    vec3 input_coords = t0;
+    vec3 input_coords;
 
     float[32] m_pointfeatures;
     float[57] concated_feats;
-    float[5] rgbda;
+    float[5] rgbad;
     float dist;
 
     int i;
 
     #pragma unroll_loop_start
     for(i = 0; i < 3; i++) {
-        input_coords = input_coords + d0 * dist;
+        input_coords = t0 + dist_scale * rd * dist;
         m_pointfeatures = bilinear_sample_tri_plane(input_coords, xy_texture, xz_texture, yz_texture);
         concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
-        rgbda = decode_color_dist(concated_feats);
-        dist += rgbda[3];
+        rgbad = decode_color_dist(concated_feats);
+        dist += rgbad[4];
     }
     #pragma unroll_loop_end
 
-    fragColor = vec4(rgbda[0], rgbda[1], rgbda[2], rgbda[4]);
+    fragColor = vec4(rgbad[0], rgbad[1], rgbad[2], rgbad[3]);
 }
 
 void main() {
