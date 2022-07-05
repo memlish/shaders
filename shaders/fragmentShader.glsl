@@ -897,7 +897,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     }
     #pragma unroll_loop_end
 
-    fragColor = vec4(rgbad[0], rgbad[1], rgbad[2], 1.);
+    fragColor = vec4(rgbad[0], rgbad[1], rgbad[2], rgbad[3]);
 }
 
 void main() {
