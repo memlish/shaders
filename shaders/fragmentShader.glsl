@@ -888,7 +888,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     int i;
 
     #pragma unroll_loop_start
-    for(i = 0; i < 1; i++) {
+    for(i = 0; i < 3; i++) {
         input_coords = t0 + dist_scale * rd * dist;
         m_pointfeatures = bilinear_sample_tri_plane(input_coords, xy_texture, xz_texture, yz_texture);
         concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
