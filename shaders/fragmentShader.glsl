@@ -28,6 +28,9 @@ uniform sampler2D tex_z;
 uniform vec3 cam_position;
 uniform float cam_zoom;
 uniform float cam_fov;
+
+uniform vec3 ypr_coefs;
+
 #define fov_ratio 120.
 
 #define BLACK vec3(0)
@@ -844,6 +847,24 @@ vec3 get_ray_dir(vec2 uv, vec3 ro, vec3 lookat){
     return normalize(rd);
 }
 
+mat3 rotateMat(vec3 ypr_coefs)
+{
+    float yaw = ypr_coefs.x;
+    float pitch = ypr_coefs.y;
+    float roll = ypr_coefs.z;
+    
+    float cp = cos(pitch);
+    float sp = sin(pitch);
+    float sr = sin(roll);
+    float cr = cos(roll);
+    float sy = sin(yaw);
+    float cy = cos(yaw);
+
+    return mat3(cp * cy, (sr * sp * cy) - (cr * sy), (cr * sp * cy) + (sr * sy),
+                cp * sy, (sr * sp * sy) + (cr * cy), (cr * sp * sy) - (sr * cy),
+                -sp, sr * cp, cr * cp);
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 uv = fragCoord.xy / iResolution.xy; // 0 <> 1
     uv -= .5;
@@ -851,7 +872,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     uv *= 2.;
 
     //get ro, rd:
-    vec3 ro = rot_ro();
+    mat3 ypr_mat = rotateMat(ypr_coefs);
+    vec3 ro = ypr_mat * rot_ro();
     vec3 lookat = vec3(0., 0., 0.);
     vec3 rd = get_ray_dir(uv, ro, lookat);
     vec3 sphere_center = vec3(0., 0., 0.);
@@ -872,6 +894,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     t0 /= radius;
     t1 /= radius;
 
+    // fragColor = vec4(t0.rgb, 1.);
+    // return;
+
     float d = length(t0 - t1);
     //end
 
@@ -888,7 +913,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     int i;
 
     #pragma unroll_loop_start
-    for(i = 0; i < 4; i++) {
+    for(i = 0; i < 3; i++) {
         input_coords = t0 + dist_scale * rd * dist;
         m_pointfeatures = bilinear_sample_tri_plane(input_coords, xy_texture, xz_texture, yz_texture);
         concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
