@@ -51,13 +51,11 @@
 			stats = new Stats();
 			container.appendChild(stats.dom);
 
-			init();
-			// render(); // remove when using next line for animation loop (requestAnimationFrame)
-			animate();
+			await init();
+			await render(); // remove when using next line for animation loop (requestAnimationFrame)
 
 			async function init() {
 				scene = new THREE.Scene();
-				// scene.background = new THREE.Color( 0xff4444 );
 				const loader = new THREE.CubeTextureLoader();
 				const texture = loader.load([
 					'./resources/posx.jpg',
@@ -68,10 +66,8 @@
 					'./resources/negz.jpg',
 				]);
 				scene.background = texture;
-				// scene.background = loader.load( 'ostap_at_the_office.jpg' );
 
 				canvas = document.querySelector('#c');
-				console.log(canvas)
 				renderer = new THREE.WebGLRenderer( { canvas, antialias: true } );
 				renderer.autoClearColor = false;
 				renderer.setSize( canvas.clientWidth, canvas.clientHeight );
@@ -168,10 +164,6 @@
 
 				scene.add( new THREE.AxesHelper( 10 ) );
 
-				// window.addEventListener( 'resize', onWindowResize );
-
-                console.log(camera)
-
 			}
 
 			function resizeRendererToDisplaySize(renderer) {
@@ -185,33 +177,19 @@
 				return needResize;
 			}
 
-			// function onWindowResize() {
-
-			// 	camera.aspect = window.innerWidth / window.innerHeight;
-			// 	camera.updateProjectionMatrix();
-
-			// 	renderer.setSize( window.innerWidth, window.innerHeight );
-
-			// }
-
-			function animate() {
-				requestAnimationFrame( animate );
-
+			async function render() {
 				resizeRendererToDisplaySize(renderer);
-				
-				stats.update();
-				controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+
 				const canvas = renderer.domElement;
 				camera.aspect = canvas.clientWidth / canvas.clientHeight;
-				camera.updateProjectionMatrix();
-            	uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
-				uniforms.cam_position.value.set(camera.position.x,  camera.position.y, camera.position.z*-1);
+				uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+				uniforms.cam_position.value.set(camera.position.x,  camera.position.y, -camera.position.z);
 				uniforms.cam_zoom.value = camera.zoom;
-				render();
-			}
 
-			function render() {
-				renderer.render( scene, camera );
+				renderer.render(scene, camera);
+				stats.update()
+				controls.update();
+				requestAnimationFrame(render);
 			}
 
 		</script>
