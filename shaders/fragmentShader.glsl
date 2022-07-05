@@ -637,7 +637,7 @@ float[5] decode_color_dist(float[57] f) {
     dot(f2_15,vec4(.00558,-.03073,-.03984,.00993))+
     0.374;
     
-    return float[5](sigmoid(f_0), sigmoid(f_1), sigmoid(f_2), f_3, f_4);
+    return float[5](f_0, f_1, f_2, sigmoid(f_3), f_4);
 }
 
 float SH_C0 = 0.28209479177387814;
@@ -888,7 +888,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     int i;
 
     #pragma unroll_loop_start
-    for(i = 0; i < 3; i++) {
+    for(i = 0; i < 4; i++) {
         input_coords = t0 + dist_scale * rd * dist;
         m_pointfeatures = bilinear_sample_tri_plane(input_coords, xy_texture, xz_texture, yz_texture);
         concated_feats = concat_basis_features(sh_basis, m_pointfeatures);
