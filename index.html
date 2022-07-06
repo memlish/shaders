@@ -8,6 +8,7 @@
 			canvas {
 				width: 512px;
 				height: 512px;
+				display: inline;
 			}
 			body {
 				margin: 0%;
@@ -23,6 +24,7 @@
 				<canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
 				<canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
 			</div>
+			<canvas class="output_canvas" width="1280px" height="720px"></canvas>
 			<video class="input_video" style="display:none"></video>
 		</div>
 
@@ -47,7 +49,11 @@
 			import { OrbitControls } from './jsm/controls/OrbitControls.js';
 			import Stats from './jsm/libs/stats.module.js';
 
+			const isDebug = true;
+
 			const videoElement = document.getElementsByClassName('input_video')[0];
+			const canvasElement = document.getElementsByClassName('output_canvas')[0];
+			const canvasCtx = canvasElement.getContext('2d');
 
 			let camera, stats, controls, scene, renderer, uniforms, canvas;
 			let backgroundScene, backgroundCamera, backgroundTexture;
@@ -63,6 +69,25 @@
 			await render(); // remove when using next line for animation loop (requestAnimationFrame)
 
 			function onResults(results) {
+				if(isDebug){
+					canvasCtx.save();
+					canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+					if (results.multiFaceLandmarks) {
+						for (const landmarks of results.multiFaceLandmarks) {
+							drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
+											{color: '#C0C0C070', lineWidth: 1});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYEBROW, {color: '#FF3030'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_IRIS, {color: '#FF3030'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYEBROW, {color: '#30FF30'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_IRIS, {color: '#30FF30'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#E0E0E0'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, {color: '#E0E0E0'});
+						}
+					}
+					canvasCtx.restore();
+				}
 				if (results.multiFaceGeometry){
 					for (const facegeometry of results.multiFaceGeometry){
 						const pt_matrix = facegeometry.getPoseTransformMatrix().getPackedDataList();
