@@ -139,7 +139,7 @@
 				renderer.setSize( canvas.clientWidth, canvas.clientHeight );
 
 				const cam_fov = 30;
-				camera = new THREE.PerspectiveCamera( cam_fov, canvas.clientWidth / canvas.clientHeight, 1, 0 );
+				camera = new THREE.PerspectiveCamera( cam_fov, canvas.clientWidth / canvas.clientHeight, 0.1, 100 );
 				camera.position.set( 0, 0, -2 );
 				camera.aspect = canvas.clientWidth / canvas.clientHeight;
 				camera.updateProjectionMatrix();
@@ -198,9 +198,15 @@
                     xz_texture: { value: xz_texture },
                     yz_texture: { value: yz_texture },
 
+
                     tex_x: { value: tex_x },
                     tex_y: { value: tex_y },
                     tex_z: { value: tex_z },
+
+                    sphere_center: {
+                        type: "v3",
+                        value: new THREE.Vector3()
+                    },
 
                     cam_position: {
                         type: "v3",
@@ -227,7 +233,7 @@
 
                 mesh = new THREE.Mesh( geometry, material );
                 mesh.position.x = 0;
-                mesh.position.y = 0;
+                mesh.position.y = 0.2;
                 mesh.position.z = 0;
                 mesh.updateMatrix();
                 mesh.matrixAutoUpdate = true;
@@ -256,7 +262,7 @@
 				uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
 				uniforms.cam_position.value.set(camera.position.x,  camera.position.y, -camera.position.z);
 				uniforms.cam_zoom.value = camera.zoom;
-
+                uniforms.sphere_center.value.set(mesh.position.x,  mesh.position.y, -mesh.position.z);
 
 				if(euler_angles){
 					// console.log(euler_angles);

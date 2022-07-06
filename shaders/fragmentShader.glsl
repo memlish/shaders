@@ -30,6 +30,7 @@ uniform float cam_zoom;
 uniform float cam_fov;
 
 uniform vec3 ypr_coefs;
+uniform vec3 sphere_center;
 
 #define fov_ratio 120.
 
@@ -878,7 +879,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec3 ro = rot_ro();
     vec3 lookat = vec3(0., 0., 0.);
     vec3 rd = get_ray_dir(uv, ro, lookat);
-    vec3 sphere_center = vec3(0., 0., 0.);
+    // vec3 sphere_center = vec3(0., 0., 0.);
     //end
 
     //Get ray params:
@@ -925,7 +926,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         dist += rgbad[4];
     }
     #pragma unroll_loop_end
-
+    
     fragColor = vec4(rgbad[0], rgbad[1], rgbad[2], rgbad[3]);
 }
 
