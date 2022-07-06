@@ -865,34 +865,6 @@ mat3 rotateMat(vec3 ypr_coefs)
                 -sp, sr * cp, cr * cp);
 }
 
-mat3 rotationMatrix(vec3 axis, float angle)
-{
-    // the usual method, copied from
-    // http://www.neilmendoza.com/glsl-rotation-about-an-arbitrary-axis/
-    //
-    axis = normalize(axis);
-    float s = sin(angle);
-    float c = cos(angle);
-    float oc = 1.0 - c;
-    
-    return mat3(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,
-                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,
-                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c);
-}
-
-mat3 createCameraYPR(vec3 ypr_coefs){
-    float cameraYaw = ypr_coefs.y;
-    float cameraPitch = ypr_coefs.z;
-    float cameraRoll = ypr_coefs.y;
-
-    vec3 forward = normalize(vec3(sin(cameraYaw), sin(cameraPitch), cos(cameraYaw)));
-	vec3 up = vec3(0.0, 1.0, 0.0);
-	vec3 cameraRight = normalize( cross(forward, up) );
-	vec3 cameraUp = normalize( cross(cameraRight, forward) );
-    return rotationMatrix(forward, cameraRoll) * mat3( cameraRight, cameraUp, forward);
-}
-
-
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 uv = fragCoord.xy / iResolution.xy; // 0 <> 1
     uv -= .5;
