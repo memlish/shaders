@@ -48,6 +48,7 @@
 
 			import { OrbitControls } from './jsm/controls/OrbitControls.js';
 			import Stats from './jsm/libs/stats.module.js';
+			import { GUI } from './jsm/libs/lil-gui.module.min.js';
 
 			const isDebug = true;
 
@@ -233,11 +234,18 @@
 
                 mesh = new THREE.Mesh( geometry, material );
                 mesh.position.x = 0;
-                mesh.position.y = 0.2;
+                mesh.position.y = 0;
                 mesh.position.z = 0;
                 mesh.updateMatrix();
                 mesh.matrixAutoUpdate = true;
                 scene.add( mesh );
+
+				const gui = new GUI()
+				const sphereFolder = gui.addFolder('Sphere Center')
+				sphereFolder.add(mesh.position, 'x', -1, 1)
+				sphereFolder.add(mesh.position, 'y', -1, 1)
+				sphereFolder.add(mesh.position, 'z', -1, 1)
+				sphereFolder.open()
 
 				scene.add( new THREE.AxesHelper( 10 ) );
 
