@@ -41,6 +41,8 @@ uniform vec3 ypr_coefs;
 #define GREEN vec3(.3,1.,.3)
 #define YELLOW vec3(1.,1.,.3)
 
+#define TO_RAD 0.017453292519943295
+
 float sigmoid(float x){
     return 1.0 / (1.0 + exp(-1. * x));
 }
@@ -836,7 +838,8 @@ vec3 rot_ro(){
 
 vec3 get_ray_dir(vec2 uv, vec3 ro, vec3 lookat){
     // float zoom = 1.;
-    float zoom = float(cam_zoom) / (cam_fov/fov_ratio);;
+    float fovx = cam_fov * TO_RAD;
+    float zoom = float(cam_zoom) / tan(fovx*.5);;
     vec3 f = normalize(lookat - ro);
     vec3 r = normalize(cross(vec3(0., 1., 0.), f));
     vec3 u = cross(f, r);
@@ -866,10 +869,9 @@ mat3 rotateMat(vec3 ypr_coefs)
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-    vec2 uv = fragCoord.xy / iResolution.xy; // 0 <> 1
-    uv -= .5;
-    uv.x *= iResolution.x / iResolution.y;
-    uv *= 2.;
+    vec2 uv = ( fragCoord.xy / iResolution.xy ) * 2.0 - 1.0;
+	//preserve aspect ratio
+	uv.x *= iResolution.x / iResolution.y;
 
     //get ro, rd:
     mat3 ypr_mat = rotateMat(ypr_coefs);
@@ -889,8 +891,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec3 t0 = ro + rd * t[0];
     vec3 t1 = ro + rd * t[1];
 
-    t0 -= lookat;
-    t1 -= lookat;
+    t0 -= sphere_center;
+    t1 -= sphere_center;
     t0 /= radius;
     t1 /= radius;
 
