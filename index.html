@@ -41,6 +41,8 @@
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+        <script src="js/tween.umd.js"></script>
+
 
 		<script type="module">
 
@@ -51,6 +53,8 @@
 			import { GUI } from './jsm/libs/lil-gui.module.min.js';
 
 			const isDebug = true;
+            // const TWEEN = require('@tweenjs/tween.js')
+
 
 			const videoElement = document.getElementsByClassName('input_video')[0];
 			const canvasElement = document.getElementsByClassName('output_canvas')[0];
@@ -58,7 +62,8 @@
 
 			let camera, stats, controls, scene, renderer, uniforms, canvas;
 			let backgroundScene, backgroundCamera, backgroundTexture;
-			let euler_angles, mesh;
+			let euler_angles, mesh, nose_pos, plane_mesh;
+            let head_scale = 1;
 
 			const container = document.createElement('div');
 			document.body.appendChild(container);
@@ -67,12 +72,14 @@
 			container.appendChild(stats.dom);
 
 			await init();
+            // await buildUp.start();
 			await render(); // remove when using next line for animation loop (requestAnimationFrame)
 
 			function onResults(results) {
 				if(isDebug){
 					canvasCtx.save();
 					canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 					if (results.multiFaceLandmarks) {
 						for (const landmarks of results.multiFaceLandmarks) {
 							drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
@@ -85,9 +92,12 @@
 							drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_IRIS, {color: '#30FF30'});
 							drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#E0E0E0'});
 							drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, {color: '#E0E0E0'});
+                            nose_pos = landmarks[6];
 						}
 					}
 					canvasCtx.restore();
+                    backgroundTexture = new THREE.CanvasTexture(canvasCtx);
+					canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 				}
 				if (results.multiFaceGeometry){
 					for (const facegeometry of results.multiFaceGeometry){
@@ -232,6 +242,18 @@
                     transparent: true
                 });
 
+                // const plane = new THREE.PlaneGeometry(1,1);
+                // const plane_mat =  new THREE.MeshPhongMaterial({
+                //     map: texture,
+                //     side: THREE.DoubleSide
+                //     });
+
+                plane_mesh = new THREE.Mesh(
+                    new THREE.PlaneGeometry(1, 1),
+                    new THREE.MeshBasicMaterial({ side: THREE.DoubleSide})
+                )
+                plane_mesh.material.map = new THREE.VideoTexture(videoElement);
+                scene.add(plane_mesh);
                 mesh = new THREE.Mesh( geometry, material );
                 mesh.position.x = 0;
                 mesh.position.y = 0;
@@ -271,7 +293,20 @@
 				uniforms.cam_position.value.set(camera.position.x,  camera.position.y, -camera.position.z);
 				uniforms.cam_zoom.value = camera.zoom;
                 uniforms.sphere_center.value.set(mesh.position.x,  mesh.position.y, -mesh.position.z);
-
+                uniforms.radius.value = mesh.geometry.parameters.radius * mesh.scale.x;
+                // console.log(mesh.);
+                backgroundTexture = new THREE.CanvasTexture(canvasCtx); 
+                if (typeof nose_pos !== 'undefined'){
+                    // console.log(nose_pos);
+                    var local_pos = new THREE.Vector3(nose_pos.x * 2 - 1, nose_pos.y * 2 - 1, nose_pos.z);
+                    var global_pos = plane_mesh.localToWorld(local_pos);
+                    // console.log(global_pos);
+                    mesh.position.x = global_pos.x / 2;
+                    mesh.position.y = -global_pos.y / 2;
+                    head_scale = 1 - global_pos.z * 30;
+                    tween_scale.start();
+                }
+                // mesh.position.x = nose_pos.x;
 				if(euler_angles){
 					// console.log(euler_angles);
 					uniforms.ypr_coefs.value.set(euler_angles['z'], euler_angles['y'], euler_angles['x']);
@@ -280,8 +315,28 @@
 				renderer.render(scene, camera);
 				stats.update()
 				controls.update();
+                TWEEN.update();
+                console.log(mesh.scale);
 				requestAnimationFrame(render);
 			}
+            const tween_scale = new TWEEN.Tween(mesh.scale)
+            .to ({x : head_scale, y: head_scale, z: head_scale}, 1)
+            .onUpdate(function () {
+                mesh.scale.x = head_scale;
+                mesh.scale.y = head_scale;
+                mesh.scale.z = head_scale;
+            });
+            // var buildUp = function (new_scale) {
+            //     return new TWEEN.Tween({
+            //         scale: 1
+            //     }).to ({
+            //         scale : 3
+            //     }, 2000).onUpdate(function () {
+            //                 sphereMesh.scale.x = new_scale;
+            //             }).onComplete(function () {
+            //                 buildDown().start();
+            //             });
+            // };
 
 		</script>
 
