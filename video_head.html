@@ -124,8 +124,10 @@
             canvasElement.height = video.videoHeight;
 
             videoElement.muted = false;
-            videoElement.play();
-            onFrame();
+            // if (nose_pos){
+                videoElement.play();
+                onFrame();
+            // }
             }
 
 
@@ -241,6 +243,7 @@
                 scene.add(plane_mesh);
 
                 mesh = new THREE.Mesh( geometry, material );
+                mesh.visible = false;
                 mesh.position.x = 0;
                 mesh.position.y = 0;
                 mesh.position.z = 0;
@@ -268,6 +271,9 @@
 			async function render() {
 				resizeRendererToDisplaySize(renderer);
 
+                if (nose_pos){
+                    mesh.visible = true;
+                }
 				const canvas = renderer.domElement;
 				camera.aspect = canvas.clientWidth / canvas.clientHeight;
 				uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
