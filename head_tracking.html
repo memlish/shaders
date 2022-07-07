@@ -56,7 +56,7 @@
 
 			let camera, stats, scene, renderer, uniforms, canvas;
 			let backgroundScene, backgroundCamera, backgroundTexture;
-			let euler_angles, mesh, nose_pos, plane_mesh;
+			let euler_angles, mesh, nose_pos, depth, plane_mesh;
             let head_scale = 1;
 
 			const container = document.createElement('div');
@@ -73,7 +73,9 @@
                 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
                 canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
                 if (results.multiFaceLandmarks) {
-                    nose_pos = results.multiFaceLandmarks[0][6];
+                    var landmarks = results.multiFaceLandmarks[0]
+                    nose_pos = landmarks[6];
+                    depth = Math.min(landmarks[1].z, landmarks[10].z, landmarks[18].z, landmarks[352].z, landmarks[123].z);
                 }
                 canvasCtx.restore();
                 backgroundTexture = new THREE.CanvasTexture(canvasCtx);
@@ -255,7 +257,7 @@
                     // var global_pos = plane_mesh.localToWorld(local_pos);
                     mesh.position.x = global_pos.x / 2;
                     mesh.position.y = -global_pos.y / 2;
-                    head_scale = 1 - global_pos.z * 30;
+                    head_scale = 1 - depth * 35;
                     tween_scale.start();
                 }
                 // mesh.position.x = nose_pos.x;
