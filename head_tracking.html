@@ -57,6 +57,9 @@
 			let camera, stats, scene, renderer, uniforms, canvas;
 			let euler_angles, mesh, nose_pos, depth, plane_mesh;
             let head_scale = 1;
+			const params = {
+				scaleCoef: 35,
+			};
 
 			const container = document.createElement('div');
 			document.body.appendChild(container);
@@ -127,7 +130,7 @@
 
 				const cam_fov = 30;
 				camera = new THREE.PerspectiveCamera( cam_fov, canvas.clientWidth / canvas.clientHeight, 0.1, 100 );
-				camera.position.set( 0, 0, -2 );
+				camera.position.set( 0, 0, -1.85 );
 				camera.aspect = canvas.clientWidth / canvas.clientHeight;
 				camera.updateProjectionMatrix();
                 camera.lookAt(  0, 0, 0  );
@@ -224,6 +227,11 @@
                 mesh.updateMatrix();
                 mesh.matrixAutoUpdate = true;
                 scene.add( mesh );
+
+				const gui = new GUI();
+
+				gui.add( params, 'scaleCoef', 1, 50 );
+				gui.open();
 			}
 
 			function resizeRendererToDisplaySize(renderer) {
@@ -256,10 +264,9 @@
                     var global_pos = plane_mesh.localToWorld(local_pos);
                     mesh.position.x = global_pos.x / 2;
                     mesh.position.y = -global_pos.y / 2;
-                    head_scale = 1 - depth * 35;
+                    head_scale = 1 - depth * params.scaleCoef;
                     tween_scale.start();
                 }
-                // mesh.position.x = nose_pos.x;
 				if(euler_angles){
 					uniforms.ypr_coefs.value.set(euler_angles['z'], euler_angles['y'], euler_angles['x']);
 				}
