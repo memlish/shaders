@@ -55,7 +55,6 @@
 			const canvasCtx = canvasElement.getContext('2d');
 
 			let camera, stats, scene, renderer, uniforms, canvas;
-			let backgroundScene, backgroundCamera, backgroundTexture;
 			let euler_angles, mesh, nose_pos, depth, plane_mesh;
             let head_scale = 1;
 
@@ -72,13 +71,12 @@
                 canvasCtx.save();
                 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
                 canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-                if (results.multiFaceLandmarks) {
+                if (results.multiFaceLandmarks.length > 0) {
                     var landmarks = results.multiFaceLandmarks[0]
                     nose_pos = landmarks[6];
                     depth = Math.min(landmarks[1].z, landmarks[10].z, landmarks[18].z, landmarks[352].z, landmarks[123].z);
                 }
                 canvasCtx.restore();
-                backgroundTexture = new THREE.CanvasTexture(canvasCtx);
                 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 				if (results.multiFaceGeometry){
 					for (const facegeometry of results.multiFaceGeometry){
@@ -121,8 +119,6 @@
 
 			async function init() {
 				scene = new THREE.Scene();
-                backgroundTexture = new THREE.VideoTexture(videoElement);
-                scene.background = backgroundTexture;
 
 				canvas = document.querySelector('#c');
 				renderer = new THREE.WebGLRenderer( { canvas, antialias: true } );
@@ -214,6 +210,13 @@
                     transparent: true
                 });
 
+                plane_mesh = new THREE.Mesh(
+                    new THREE.PlaneBufferGeometry(1, 1),
+                    new THREE.MeshBasicMaterial({ side: THREE.DoubleSide})
+                )
+                plane_mesh.material.map = new THREE.VideoTexture(videoElement);
+                scene.add(plane_mesh);
+
                 mesh = new THREE.Mesh( geometry, material );
                 mesh.position.x = 0;
                 mesh.position.y = 0;
@@ -221,9 +224,6 @@
                 mesh.updateMatrix();
                 mesh.matrixAutoUpdate = true;
                 scene.add( mesh );
-
-				// scene.add( new THREE.AxesHelper( 10 ) );
-
 			}
 
 			function resizeRendererToDisplaySize(renderer) {
@@ -247,14 +247,13 @@
 				uniforms.cam_zoom.value = camera.zoom;
                 uniforms.sphere_center.value.set(mesh.position.x,  mesh.position.y, -mesh.position.z);
                 uniforms.radius.value = mesh.geometry.parameters.radius * mesh.scale.x;
-                backgroundTexture = new THREE.CanvasTexture(canvasCtx); 
                 if (nose_pos){
-                    var global_pos = new THREE.Vector3(
-                        -(nose_pos.x * 2 - 1), 
+                    var local_pos = new THREE.Vector3(
+                        nose_pos.x * 2 - 1, 
                         nose_pos.y * 2 - 1, 
                         nose_pos.z
                     );
-                    // var global_pos = plane_mesh.localToWorld(local_pos);
+                    var global_pos = plane_mesh.localToWorld(local_pos);
                     mesh.position.x = global_pos.x / 2;
                     mesh.position.y = -global_pos.y / 2;
                     head_scale = 1 - depth * 35;
