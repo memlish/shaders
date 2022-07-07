@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - orbit controls</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			canvas {
+				width: 512px;
+				height: 512px;
+				display: inline;
+			}
+			body {
+				margin: 0%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div>
+			<canvas id="c"></canvas>
+			<div style="position: fixed; top: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;">
+				<canvas width="80" height="48" style="width: 80px; height: 48px; display: block;"></canvas>
+				<canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
+				<canvas width="80" height="48" style="width: 80px; height: 48px; display: none;"></canvas>
+			</div>
+			<canvas class="output_canvas" width="1280px" height="720px"></canvas>
+			<video class="input_video" style="display:none"></video>
+		</div>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./js/three.module.js"
+				}
+			}
+		</script>
+
+		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+        <script src="js/tween.umd.js"></script>
+
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import Stats from './jsm/libs/stats.module.js';
+			import { GUI } from './jsm/libs/lil-gui.module.min.js';
+
+			const isDebug = true;
+            // const TWEEN = require('@tweenjs/tween.js')
+
+
+			const videoElement = document.getElementsByClassName('input_video')[0];
+			const canvasElement = document.getElementsByClassName('output_canvas')[0];
+			const canvasCtx = canvasElement.getContext('2d');
+
+			let camera, stats, controls, scene, renderer, uniforms, canvas;
+			let backgroundScene, backgroundCamera, backgroundTexture;
+			let euler_angles, mesh, nose_pos, plane_mesh;
+            let head_scale = 1;
+
+			const container = document.createElement('div');
+			document.body.appendChild(container);
+
+			stats = new Stats();
+			container.appendChild(stats.dom);
+
+			await init();
+            // await buildUp.start();
+			await render(); // remove when using next line for animation loop (requestAnimationFrame)
+
+			function onResults(results) {
+				if(isDebug){
+					canvasCtx.save();
+					canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+					if (results.multiFaceLandmarks) {
+						for (const landmarks of results.multiFaceLandmarks) {
+							drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
+											{color: '#C0C0C070', lineWidth: 1});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYEBROW, {color: '#FF3030'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_IRIS, {color: '#FF3030'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYEBROW, {color: '#30FF30'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_IRIS, {color: '#30FF30'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#E0E0E0'});
+							drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, {color: '#E0E0E0'});
+                            nose_pos = landmarks[6];
+						}
+					}
+					canvasCtx.restore();
+                    backgroundTexture = new THREE.CanvasTexture(canvasCtx);
+					canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+				}
+				if (results.multiFaceGeometry){
+					for (const facegeometry of results.multiFaceGeometry){
+						const pt_matrix = facegeometry.getPoseTransformMatrix().getPackedDataList();
+						const pt_matrix_three_js_format = new THREE.Matrix4().fromArray(pt_matrix);
+						euler_angles = new THREE.Euler().setFromRotationMatrix(pt_matrix_three_js_format, 'XYZ');
+					}
+				}
+			}
+
+			const faceMesh = new FaceMesh({locateFile: (file) => {
+				return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+			}});
+
+			faceMesh.setOptions({
+				maxNumFaces: 1,
+				enableFaceGeometry: true,
+				refineLandmarks: false,
+				minDetectionConfidence: 0.48,
+				minTrackingConfidence: 0.5
+			});
+			faceMesh.onResults(onResults);
+
+			const face_tracking_camera = new Camera(videoElement, {
+				onFrame: async () => {
+					await faceMesh.send({image: videoElement});
+				},
+				width: 1280,
+				height: 720
+			});
+			face_tracking_camera.start();
+
+
+			async function init() {
+				scene = new THREE.Scene();
+				const loader = new THREE.CubeTextureLoader();
+				const texture = loader.load([
+					'./resources/posx.jpg',
+					'./resources/negx.jpg',
+					'./resources/posy.jpg',
+					'./resources/negy.jpg',
+					'./resources/posz.jpg',
+					'./resources/negz.jpg',
+				]);
+				scene.background = texture;
+
+				canvas = document.querySelector('#c');
+				renderer = new THREE.WebGLRenderer( { canvas, antialias: true } );
+				renderer.autoClearColor = false;
+				renderer.setSize( canvas.clientWidth, canvas.clientHeight );
+
+				const cam_fov = 30;
+				camera = new THREE.PerspectiveCamera( cam_fov, canvas.clientWidth / canvas.clientHeight, 0.1, 100 );
+				camera.position.set( 0, 0, -2 );
+				camera.aspect = canvas.clientWidth / canvas.clientHeight;
+				camera.updateProjectionMatrix();
+
+				// controls
+
+				controls = new OrbitControls( camera, renderer.domElement );
+				controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+				controls.dampingFactor = 0.05;
+
+				controls.maxPolarAngle = Math.PI;// / 2;
+				controls.enablePan = false;
+
+				// world
+
+                const vertexShader = await fetch('./shaders/vertexShader.glsl')
+                    .then(response => { return response.text(); });
+
+                const fragmentShader = await fetch('./shaders/fragmentShader.glsl')
+                    .then(response => { return response.text(); });
+
+                const lf_metadata = await fetch("./textures/metadata.json")
+                    .then(response => {
+                        const j = response.json();
+                        return j;
+                    });
+
+                var texture_loader = new THREE.TextureLoader();
+                const xy_texture = texture_loader.load("./textures/xy_texture.png");
+                const xz_texture = texture_loader.load("./textures/xz_texture.png");
+                const yz_texture = texture_loader.load("./textures/yz_texture.png");
+
+                const tex_x = texture_loader.load("./textures/tex_x_image.png");
+                const tex_y = texture_loader.load("./textures/tex_y_image.png");
+                const tex_z = texture_loader.load("./textures/tex_z_image.png");
+
+                uniforms = {
+                    iTime: { value: 0 },
+                    iResolution: { value: new THREE.Vector3() },
+
+                    texture_min: { value: lf_metadata.texture_min },
+                    texture_max: { value: lf_metadata.texture_max },
+
+                    tex_x_min: { value: lf_metadata.tex_x_min },
+                    tex_x_max: { value: lf_metadata.tex_x_max },
+
+                    tex_y_min: { value: lf_metadata.tex_y_min },
+                    tex_y_max: { value: lf_metadata.tex_y_max },
+
+                    tex_z_min: { value: lf_metadata.tex_z_min },
+                    tex_z_max: { value: lf_metadata.tex_z_max },
+
+                    radius: { value: lf_metadata.radius },
+
+                    xy_texture: { value: xy_texture },
+                    xz_texture: { value: xz_texture },
+                    yz_texture: { value: yz_texture },
+
+
+                    tex_x: { value: tex_x },
+                    tex_y: { value: tex_y },
+                    tex_z: { value: tex_z },
+
+                    sphere_center: {
+                        type: "v3",
+                        value: new THREE.Vector3()
+                    },
+
+                    cam_position: {
+                        type: "v3",
+                        value: new THREE.Vector3()
+                    },
+
+					cam_zoom: { value: 1. },
+					cam_fov: { value: cam_fov },
+
+					ypr_coefs: {
+						type: "v3",
+                        value: new THREE.Vector3(0., 0., 0.,)
+					}
+                };
+
+				const geometry = new THREE.SphereGeometry(lf_metadata.radius, 32, 32);
+
+                const material = new THREE.ShaderMaterial({
+                    vertexShader,
+                    fragmentShader,
+                    uniforms,
+                    transparent: true
+                });
+
+                // const plane = new THREE.PlaneGeometry(1,1);
+                // const plane_mat =  new THREE.MeshPhongMaterial({
+                //     map: texture,
+                //     side: THREE.DoubleSide
+                //     });
+
+                plane_mesh = new THREE.Mesh(
+                    new THREE.PlaneGeometry(1, 1),
+                    new THREE.MeshBasicMaterial({ side: THREE.DoubleSide})
+                )
+                plane_mesh.material.map = new THREE.VideoTexture(videoElement);
+                scene.add(plane_mesh);
+                mesh = new THREE.Mesh( geometry, material );
+                mesh.position.x = 0;
+                mesh.position.y = 0;
+                mesh.position.z = 0;
+                mesh.updateMatrix();
+                mesh.matrixAutoUpdate = true;
+                scene.add( mesh );
+
+				const gui = new GUI();
+				const sphereFolder = gui.addFolder('Sphere Center');
+				sphereFolder.add(mesh.position, 'x', -1, 1);
+				sphereFolder.add(mesh.position, 'y', -1, 1);
+				sphereFolder.add(mesh.position, 'z', -1, 1);
+				sphereFolder.open();
+
+				scene.add( new THREE.AxesHelper( 10 ) );
+
+			}
+
+			function resizeRendererToDisplaySize(renderer) {
+				const canvas = renderer.domElement;
+				const width = canvas.clientWidth;
+				const height = canvas.clientHeight;
+				const needResize = canvas.width !== width || canvas.height !== height;
+				if (needResize) {
+					renderer.setSize(width, height, false);
+				}
+				return needResize;
+			}
+
+			async function render() {
+				resizeRendererToDisplaySize(renderer);
+
+				const canvas = renderer.domElement;
+				camera.aspect = canvas.clientWidth / canvas.clientHeight;
+				uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+				uniforms.cam_position.value.set(camera.position.x,  camera.position.y, -camera.position.z);
+				uniforms.cam_zoom.value = camera.zoom;
+                uniforms.sphere_center.value.set(mesh.position.x,  mesh.position.y, -mesh.position.z);
+                uniforms.radius.value = mesh.geometry.parameters.radius * mesh.scale.x;
+                // console.log(mesh.);
+                backgroundTexture = new THREE.CanvasTexture(canvasCtx); 
+                if (typeof nose_pos !== 'undefined'){
+                    // console.log(nose_pos);
+                    var local_pos = new THREE.Vector3(nose_pos.x * 2 - 1, nose_pos.y * 2 - 1, nose_pos.z);
+                    var global_pos = plane_mesh.localToWorld(local_pos);
+                    // console.log(global_pos);
+                    mesh.position.x = global_pos.x / 2;
+                    mesh.position.y = -global_pos.y / 2;
+                    head_scale = 1 - global_pos.z * 30;
+                    tween_scale.start();
+                }
+                // mesh.position.x = nose_pos.x;
+				if(euler_angles){
+					// console.log(euler_angles);
+					uniforms.ypr_coefs.value.set(euler_angles['z'], euler_angles['y'], euler_angles['x']);
+				}
+
+				renderer.render(scene, camera);
+				stats.update()
+				controls.update();
+                TWEEN.update();
+                console.log(mesh.scale);
+				requestAnimationFrame(render);
+			}
+            const tween_scale = new TWEEN.Tween(mesh.scale)
+            .to ({x : head_scale, y: head_scale, z: head_scale}, 1)
+            .onUpdate(function () {
+                mesh.scale.x = head_scale;
+                mesh.scale.y = head_scale;
+                mesh.scale.z = head_scale;
+            });
+		</script>
+
+	</body>
+</html>
