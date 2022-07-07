@@ -5,8 +5,8 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			canvas {
-				width: 512px;
-				height: 512px;
+				width: 25%;
+				height: 25%;
 				display: inline;
 			}
 			body {
@@ -214,7 +214,7 @@
                 });
 
                 plane_mesh = new THREE.Mesh(
-                    new THREE.PlaneBufferGeometry(1, 1),
+                    new THREE.PlaneBufferGeometry(1 * (canvas.clientWidth / canvas.clientHeight), 1),
                     new THREE.MeshBasicMaterial({ side: THREE.DoubleSide})
                 )
                 plane_mesh.material.map = new THREE.VideoTexture(videoElement);
@@ -262,7 +262,7 @@
                         nose_pos.z
                     );
                     var global_pos = plane_mesh.localToWorld(local_pos);
-                    mesh.position.x = global_pos.x / 2;
+                    mesh.position.x = global_pos.x * camera.aspect / 2;
                     mesh.position.y = -global_pos.y / 2;
                     head_scale = 1 - depth * params.scaleCoef;
                     tween_scale.start();
