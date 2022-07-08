@@ -5,8 +5,8 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			canvas {
-				width: 100%;
-				height: 100%;
+				width: 512px;
+				height: 512px;
 				display: inline;
 			}
 			body {
@@ -75,8 +75,12 @@
                 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
                 canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
                 if (results.multiFaceLandmarks.length > 0) {
-                    var landmarks = results.multiFaceLandmarks[0]
-                    nose_pos = landmarks[6];
+                    var landmarks = results.multiFaceLandmarks[0];
+					var _x = (landmarks[127].x + landmarks[356].x) / 2;
+					var _y = (landmarks[127].y + landmarks[356].y) / 2;
+					var _z = (landmarks[127].z + landmarks[356].z) / 2;
+                    nose_pos = new THREE.Vector3(_x, _y, _z);
+					console.log(nose_pos)
                     depth = Math.min(landmarks[1].z, landmarks[10].z, landmarks[18].z, landmarks[352].z, landmarks[123].z);
                 }
                 canvasCtx.restore();
@@ -250,12 +254,8 @@
 
 				const canvas = renderer.domElement;
 				camera.aspect = canvas.clientWidth / canvas.clientHeight;
-				uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
-				uniforms.cam_position.value.set(camera.position.x,  camera.position.y, -camera.position.z);
-				uniforms.cam_zoom.value = camera.zoom;
-                uniforms.sphere_center.value.set(mesh.position.x,  mesh.position.y, -mesh.position.z);
-                uniforms.radius.value = mesh.geometry.parameters.radius * mesh.scale.x;
-                if (nose_pos){
+
+				if (nose_pos){
                     var local_pos = new THREE.Vector3(
                         nose_pos.x * 2 - 1, 
                         nose_pos.y * 2 - 1, 
@@ -271,6 +271,12 @@
 					uniforms.ypr_coefs.value.set(euler_angles['z'], euler_angles['y'], euler_angles['x']);
 				}
 
+				uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+				uniforms.cam_position.value.set(camera.position.x,  camera.position.y, -camera.position.z);
+				uniforms.cam_zoom.value = camera.zoom;
+                uniforms.sphere_center.value.set(mesh.position.x,  mesh.position.y, -mesh.position.z);
+                uniforms.radius.value = mesh.geometry.parameters.radius * mesh.scale.x;
+                
 				renderer.render(scene, camera);
 				stats.update()
                 TWEEN.update();

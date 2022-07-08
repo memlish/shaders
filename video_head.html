@@ -76,8 +76,11 @@
                 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
                 canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
                 if (results.multiFaceLandmarks.length > 0) {
-                    var landmarks = results.multiFaceLandmarks[0]
-                    nose_pos = landmarks[6];
+                    var landmarks = results.multiFaceLandmarks[0];
+					var _x = (landmarks[127].x + landmarks[356].x) / 2;
+					var _y = (landmarks[127].y + landmarks[356].y) / 2;
+					var _z = (landmarks[127].z + landmarks[356].z) / 2;
+                    nose_pos = new THREE.Vector3(_x, _y, _z);
                     depth = Math.min(landmarks[1].z, landmarks[10].z, landmarks[18].z, landmarks[352].z, landmarks[123].z);
                 }
                 canvasCtx.restore();
