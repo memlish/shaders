@@ -55,7 +55,7 @@
 			const canvasElement = document.getElementsByClassName('output_canvas')[0];
 			const canvasCtx = canvasElement.getContext('2d');
 
-			let camera, stats, scene, renderer, uniforms, canvas;
+			let camera, stats, scene, renderer, uniforms, canvas, sphere_meshes, landmarks, our_mesh_multiplier;
 			let euler_angles, mesh, nose_pos, depth, plane_mesh, lmk_sphere_mesh;
             let head_scale = 1;
 			const params = {
@@ -76,7 +76,7 @@
                 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
                 canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
                 if (results.multiFaceLandmarks.length > 0) {
-                    var landmarks = results.multiFaceLandmarks[0];
+                    landmarks = results.multiFaceLandmarks[0];
 					var _x = (landmarks[127].x + landmarks[356].x) / 2;
 					var _y = (landmarks[127].y + landmarks[356].y) / 2;
 					var _z = (landmarks[127].z + landmarks[356].z) / 2;
@@ -111,9 +111,9 @@
             const tween_scale = new TWEEN.Tween(mesh.scale)
                 .to ({x : head_scale, y: head_scale, z: head_scale}, 1)
                 .onUpdate(function () {
-                    // mesh.scale.x = head_scale;
-                    // mesh.scale.y = head_scale;
-                    // mesh.scale.z = head_scale;
+                    mesh.scale.x = head_scale;
+                    mesh.scale.y = head_scale;
+                    mesh.scale.z = head_scale;
                 });
 
 			const face_tracking_camera = new Camera(videoElement, {
@@ -211,19 +211,6 @@
 
 				const geometry = new THREE.SphereGeometry(lf_metadata.radius, 32, 32);
 
-				const lmk_sphere_geom = new THREE.SphereGeometry(0.05, 32, 32);
-
-                const material = new THREE.ShaderMaterial({
-                    vertexShader,
-                    fragmentShader,
-                    uniforms,
-                    transparent: true
-                });
-
-				const lmk_sphere_geom_mat = new THREE.MeshBasicMaterial({
-                    color: 0xff0000
-                });
-
                 plane_mesh = new THREE.Mesh(
                     new THREE.PlaneBufferGeometry((canvas.clientWidth / canvas.clientHeight), 1),
                     new THREE.MeshBasicMaterial({ side: THREE.DoubleSide})
@@ -231,10 +218,28 @@
                 plane_mesh.material.map = new THREE.VideoTexture(videoElement);
                 scene.add(plane_mesh);
 
-                lmk_sphere_mesh = new THREE.Mesh( lmk_sphere_geom,  lmk_sphere_geom_mat);
-				lmk_sphere_mesh.updateMatrix();
-                lmk_sphere_mesh.matrixAutoUpdate = true;
-				scene.add( lmk_sphere_mesh );
+                sphere_meshes = []
+
+                for (let i = 0; i < OURS_HEADSPACE_MEDIAPIPE_LANDMARKS.length; i++){
+                    const lmk_sphere_geom = new THREE.SphereGeometry(0.002, 32, 32);
+
+                    const lmk_sphere_geom_mat = new THREE.MeshBasicMaterial({
+                        color: 0xff0000
+                    });
+                    lmk_sphere_mesh = new THREE.Mesh( lmk_sphere_geom,  lmk_sphere_geom_mat);
+                    lmk_sphere_mesh.updateMatrix();
+                    lmk_sphere_mesh.matrixAutoUpdate = true;
+                    scene.add( lmk_sphere_mesh );
+                    sphere_meshes.push(lmk_sphere_mesh)
+                }
+
+
+                const material = new THREE.ShaderMaterial({
+                    vertexShader,
+                    fragmentShader,
+                    uniforms,
+                    transparent: true
+                });
 
                 mesh = new THREE.Mesh( geometry, material );
                 mesh.position.x = 0;
@@ -277,11 +282,83 @@
                     mesh.position.x = global_pos.x * camera.aspect / 2;
                     mesh.position.y = -global_pos.y / 2;
 
-					lmk_sphere_mesh.position.x = mesh.position.x + OURS_HEADSPACE_MEDIAPIPE_LANDMARKS[0][0] * 0.155;
-					lmk_sphere_mesh.position.y = mesh.position.y + OURS_HEADSPACE_MEDIAPIPE_LANDMARKS[0][1] * 0.155;
-					lmk_sphere_mesh.position.z = -(mesh.position.z + OURS_HEADSPACE_MEDIAPIPE_LANDMARKS[0][2] * 0.155);
+                    const planeNormal = new THREE.Vector3(0.,0, 1.);
+                    const videoPlane = new THREE.Plane(planeNormal, 1.);
+                    
+                    let keypoints_projected = []
+                    let keypoints_mediapipe = []
+
+
+                    for (let i = 0; i < OURS_HEADSPACE_MEDIAPIPE_LANDMARKS.length; i++){
+                        let sphere_mesh = sphere_meshes[i]
+
+                        let headspace_keypoint_pos = new THREE.Vector3(...OURS_HEADSPACE_MEDIAPIPE_LANDMARKS[i])
+                        headspace_keypoint_pos = headspace_keypoint_pos.multiplyScalar(0.155)
+                        headspace_keypoint_pos = headspace_keypoint_pos.applyEuler(euler_angles)
+                    
+                        let keypoint_pos = new THREE.Vector3(
+                            mesh.position.x + headspace_keypoint_pos.x,
+                            mesh.position.y + headspace_keypoint_pos.y,
+                            -(mesh.position.z + headspace_keypoint_pos.z)
+                        ); 
+                        
+                        const projected_keypoint = new THREE.Vector3();
+
+                        //videoPlane.projectPoint(keypoint_pos, projected_keypoint);
+                        keypoint_pos = keypoint_pos.projectOnPlane(planeNormal);
+                        
+                        sphere_mesh.position.x = keypoint_pos.x;
+                        sphere_mesh.position.y = keypoint_pos.y;
+                        sphere_mesh.position.z = keypoint_pos.z;
+
+                        let keypoint_mediapipe = new THREE.Vector2(landmarks[i].x, landmarks[i].y);
+                        keypoint_mediapipe = keypoint_mediapipe.multiplyScalar(2.).addScalar(-1.)
+
+                        let keypoint_projected = new THREE.Vector2(keypoint_pos.x, keypoint_pos.y);
+
+                        keypoints_projected.push(keypoint_projected)
+                        keypoints_mediapipe.push(keypoint_mediapipe)
+                    }
+                    
+                    
+                    const keypoint_ids = [
+                        [152, 10],
+                        [10, 199],
+                        [42, 88],
+                        [189, 193],
+                        [168, 417],
+                        [63, 66],
+                        [108, 109],
+                        [289, 264],
+                        [165, 164],
+                        [215, 192],
+                        [123, 161],
+                    ]
+
+                    const multiplers = [];
+                    our_mesh_multiplier = 0;
+
+                    for (let i = 0; i < keypoint_ids.length; i++){
+                        const mediapipe_len = keypoints_mediapipe[0].sub(keypoints_mediapipe[100]).length()
+                        const our_len = keypoints_projected[0].sub(keypoints_projected[100]).length()
+                        const mesh_multiplier = mediapipe_len / our_len;
+                        our_mesh_multiplier += mesh_multiplier;
+                        multiplers.push(mesh_multiplier);
+                    }
+                    
+                    
+                    our_mesh_multiplier /= keypoint_ids.length; 
+
+                    for (let i = 0; i < OURS_HEADSPACE_MEDIAPIPE_LANDMARKS.length; i++){
+                        let sphere_mesh = sphere_meshes[i];
+                        sphere_mesh.position.x *= our_mesh_multiplier;
+                        sphere_mesh.position.y *= our_mesh_multiplier;
+                    }
+ 
 
                     head_scale = 1 - depth * params.scaleCoef;
+                    head_scale= our_mesh_multiplier;
+                    console.log('head_scale', head_scale, 'our_mesh_multiplier', our_mesh_multiplier)
                     tween_scale.start();
                 }
 				if(euler_angles){
