@@ -83,19 +83,6 @@
                     nose_pos = new THREE.Vector3(_x, _y, _z);
 					// console.log(nose_pos)
                     depth = Math.min(landmarks[1].z, landmarks[10].z, landmarks[18].z, landmarks[352].z, landmarks[123].z, nose_pos.z);
-                    for (const landmarks of results.multiFaceLandmarks) {
-                        drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
-                                        {color: '#C0C0C070', lineWidth: 1});
-                        drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030'});
-                        drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYEBROW, {color: '#FF3030'});
-                        drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_IRIS, {color: '#FF3030'});
-                        drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30'});
-                        drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYEBROW, {color: '#30FF30'});
-                        drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_IRIS, {color: '#30FF30'});
-                        drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#E0E0E0'});
-                        drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, {color: '#E0E0E0'});
-                    }
-                    
                 }
                 canvasCtx.restore();
                 // canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -230,22 +217,6 @@
                 )
                 plane_mesh.material.map = new THREE.VideoTexture(videoElement);
                 scene.add(plane_mesh);
-
-                sphere_meshes = []
-
-                for (let i = 0; i < OURS_HEADSPACE_MEDIAPIPE_LANDMARKS.length; i++){
-                    const lmk_sphere_geom = new THREE.SphereGeometry(0.002, 32, 32);
-
-                    const lmk_sphere_geom_mat = new THREE.MeshBasicMaterial({
-                        color: 0xff0000
-                    });
-                    lmk_sphere_mesh = new THREE.Mesh( lmk_sphere_geom,  lmk_sphere_geom_mat);
-                    lmk_sphere_mesh.updateMatrix();
-                    lmk_sphere_mesh.matrixAutoUpdate = true;
-                    scene.add( lmk_sphere_mesh );
-                    sphere_meshes.push(lmk_sphere_mesh)
-                }
-
 
                 const material = new THREE.ShaderMaterial({
                     vertexShader,
