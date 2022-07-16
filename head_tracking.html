@@ -83,9 +83,22 @@
                     nose_pos = new THREE.Vector3(_x, _y, _z);
 					// console.log(nose_pos)
                     depth = Math.min(landmarks[1].z, landmarks[10].z, landmarks[18].z, landmarks[352].z, landmarks[123].z, nose_pos.z);
+                    for (const landmarks of results.multiFaceLandmarks) {
+                        drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
+                                        {color: '#C0C0C070', lineWidth: 1});
+                        drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030'});
+                        drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYEBROW, {color: '#FF3030'});
+                        drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_IRIS, {color: '#FF3030'});
+                        drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30'});
+                        drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYEBROW, {color: '#30FF30'});
+                        drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_IRIS, {color: '#30FF30'});
+                        drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#E0E0E0'});
+                        drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, {color: '#E0E0E0'});
+                    }
+                    
                 }
                 canvasCtx.restore();
-                canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                // canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 				if (results.multiFaceGeometry){
 					for (const facegeometry of results.multiFaceGeometry){
 						const pt_matrix = facegeometry.getPoseTransformMatrix().getPackedDataList();
@@ -288,14 +301,12 @@
                     let keypoints_projected = []
                     let keypoints_mediapipe = []
 
-
                     for (let i = 0; i < OURS_HEADSPACE_MEDIAPIPE_LANDMARKS.length; i++){
-                        let sphere_mesh = sphere_meshes[i]
 
                         let headspace_keypoint_pos = new THREE.Vector3(...OURS_HEADSPACE_MEDIAPIPE_LANDMARKS[i])
-                        headspace_keypoint_pos = headspace_keypoint_pos.multiplyScalar(0.155)
+                        
                         headspace_keypoint_pos = headspace_keypoint_pos.applyEuler(euler_angles)
-                    
+                        headspace_keypoint_pos = headspace_keypoint_pos.multiplyScalar(0.155)
                         let keypoint_pos = new THREE.Vector3(
                             mesh.position.x + headspace_keypoint_pos.x,
                             mesh.position.y + headspace_keypoint_pos.y,
@@ -304,12 +315,7 @@
                         
                         const projected_keypoint = new THREE.Vector3();
 
-                        //videoPlane.projectPoint(keypoint_pos, projected_keypoint);
                         keypoint_pos = keypoint_pos.projectOnPlane(planeNormal);
-                        
-                        sphere_mesh.position.x = keypoint_pos.x;
-                        sphere_mesh.position.y = keypoint_pos.y;
-                        sphere_mesh.position.z = keypoint_pos.z;
 
                         let keypoint_mediapipe = new THREE.Vector2(landmarks[i].x, landmarks[i].y);
                         keypoint_mediapipe = keypoint_mediapipe.multiplyScalar(2.).addScalar(-1.)
@@ -339,24 +345,17 @@
                     our_mesh_multiplier = 0;
 
                     for (let i = 0; i < keypoint_ids.length; i++){
-                        const mediapipe_len = keypoints_mediapipe[0].sub(keypoints_mediapipe[100]).length()
-                        const our_len = keypoints_projected[0].sub(keypoints_projected[100]).length()
+                        const mediapipe_len = keypoints_mediapipe[keypoint_ids[i][0]].sub(keypoints_mediapipe[keypoint_ids[i][1]]).length()
+                        const our_len = keypoints_projected[keypoint_ids[i][0]].sub(keypoints_projected[keypoint_ids[i][1]]).length()
                         const mesh_multiplier = mediapipe_len / our_len;
                         our_mesh_multiplier += mesh_multiplier;
                         multiplers.push(mesh_multiplier);
                     }
                     
                     
-                    our_mesh_multiplier /= keypoint_ids.length; 
-
-                    for (let i = 0; i < OURS_HEADSPACE_MEDIAPIPE_LANDMARKS.length; i++){
-                        let sphere_mesh = sphere_meshes[i];
-                        sphere_mesh.position.x *= our_mesh_multiplier;
-                        sphere_mesh.position.y *= our_mesh_multiplier;
-                    }
- 
-
-                    head_scale = 1 - depth * params.scaleCoef;
+                    our_mesh_multiplier /= keypoint_ids.length;
+                    our_mesh_multiplier /= 2;
+                    
                     head_scale= our_mesh_multiplier;
                     console.log('head_scale', head_scale, 'our_mesh_multiplier', our_mesh_multiplier)
                     tween_scale.start();
