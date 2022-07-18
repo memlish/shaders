@@ -279,11 +279,7 @@
                 }
 				const canvas = renderer.domElement;
 				camera.aspect = canvas.clientWidth / canvas.clientHeight;
-				uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
-				uniforms.cam_position.value.set(camera.position.x,  camera.position.y, -camera.position.z);
-				uniforms.cam_zoom.value = camera.zoom;
-                uniforms.sphere_center.value.set(mesh.position.x,  mesh.position.y, -mesh.position.z);
-                uniforms.radius.value = mesh.geometry.parameters.radius * mesh.scale.x;
+
                 if (nose_pos){
                     var local_pos = new THREE.Vector3(
                         nose_pos.x * 2 - 1, 
@@ -293,7 +289,74 @@
                     var global_pos = plane_mesh.localToWorld(local_pos);
                     mesh.position.x = global_pos.x * camera.aspect / 2;
                     mesh.position.y = -global_pos.y / 2;
-                    head_scale = 1 - depth * params.scaleCoef;
+
+                    const planeNormal = new THREE.Vector3(0.,0, 1.);
+                    const videoPlane = new THREE.Plane(planeNormal, 1.);
+                    
+                    let keypoints_projected = []
+                    let keypoints_mediapipe = []
+
+                    for (let i = 0; i < OURS_HEADSPACE_MEDIAPIPE_LANDMARKS.length; i++){
+
+                        let headspace_keypoint_pos = new THREE.Vector3(...OURS_HEADSPACE_MEDIAPIPE_LANDMARKS[i])
+                        
+                        headspace_keypoint_pos = headspace_keypoint_pos.applyEuler(euler_angles)
+                        headspace_keypoint_pos = headspace_keypoint_pos.multiplyScalar(0.155)
+                        let keypoint_pos = new THREE.Vector3(
+                            mesh.position.x + headspace_keypoint_pos.x,
+                            mesh.position.y + headspace_keypoint_pos.y,
+                            -(mesh.position.z + headspace_keypoint_pos.z)
+                        ); 
+                        
+                        const projected_keypoint = new THREE.Vector3();
+
+                        keypoint_pos = keypoint_pos.projectOnPlane(planeNormal);
+
+                        let keypoint_mediapipe = new THREE.Vector2(landmarks[i].x, landmarks[i].y);
+                        keypoint_mediapipe = keypoint_mediapipe.multiplyScalar(2.).addScalar(-1.)
+
+                        let keypoint_projected = new THREE.Vector2(keypoint_pos.x, keypoint_pos.y);
+
+                        keypoints_projected.push(keypoint_projected)
+                        keypoints_mediapipe.push(keypoint_mediapipe)
+                    }
+                    
+                    
+                    const keypoint_ids = [
+                        [105,66],
+                        [296, 334],
+                        [329, 330],
+                        [420, 355],
+                        [126, 198], 
+                        [100,101],
+                        [262, 431],
+                        [211, 32],
+                        [57, 185],
+                        [287, 409],
+                    ]
+
+                    const multiplers = [];
+                    our_mesh_multiplier = 0;
+
+                    for (let i = 0; i < keypoint_ids.length; i++){
+                        const mediapipe_len = keypoints_mediapipe[keypoint_ids[i][0]].sub(keypoints_mediapipe[keypoint_ids[i][1]]).length()
+                        const our_len = keypoints_projected[keypoint_ids[i][0]].sub(keypoints_projected[keypoint_ids[i][1]]).length()
+                        const mesh_multiplier = mediapipe_len / our_len;
+                        our_mesh_multiplier += mesh_multiplier;
+                        multiplers.push(mesh_multiplier);
+                    }
+                    
+                    
+                    our_mesh_multiplier /= keypoint_ids.length;
+                    our_mesh_multiplier /= 2;
+                    
+                    head_scale= our_mesh_multiplier;
+                    
+                    uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+                    uniforms.cam_position.value.set(camera.position.x,  camera.position.y, -camera.position.z);
+                    uniforms.cam_zoom.value = camera.zoom;
+                    uniforms.sphere_center.value.set(mesh.position.x,  mesh.position.y, -mesh.position.z);
+                    uniforms.radius.value = mesh.geometry.parameters.radius * mesh.scale.x;
                     tween_scale.start();
                 }
 				if(euler_angles){
