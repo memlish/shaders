@@ -54,8 +54,8 @@
 			const canvasElement = document.getElementsByClassName('output_canvas')[0];
 			const canvasCtx = canvasElement.getContext('2d');
 
-			let camera, stats, scene, renderer, uniforms, canvas, sphere_meshes, landmarks, our_mesh_multiplier;
-			let euler_angles, mesh, head_center, depth, plane_mesh, lmk_sphere_mesh, radius;
+			let camera, stats, scene, renderer, uniforms, canvas, landmarks, our_mesh_multiplier;
+			let euler_angles, mesh, head_center, plane_mesh, lmk_sphere_mesh, radius;
             let head_scale = 1;
 
 			const container = document.createElement('div');
@@ -77,8 +77,6 @@
 					var _y = (landmarks[127].y + landmarks[356].y) / 2;
 					var _z = (landmarks[127].z + landmarks[356].z) / 2;
                     head_center = new THREE.Vector3(_x, _y, _z);
-					// console.log(head_center)
-                    depth = Math.min(landmarks[1].z, landmarks[10].z, landmarks[18].z, landmarks[352].z, landmarks[123].z, head_center.z);
                 }
                 canvasCtx.restore();
                 // canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -99,7 +97,7 @@
 				maxNumFaces: 1,
 				enableFaceGeometry: true,
 				refineLandmarks: false,
-				minDetectionConfidence: 0.48,
+				minDetectionConfidence: 0.5,
 				minTrackingConfidence: 0.5
 			});
 			faceMesh.onResults(onMultiFaceLandmarksResults);
@@ -131,7 +129,7 @@
 
 				const cam_fov = 30;
 				camera = new THREE.PerspectiveCamera( cam_fov, canvas.clientWidth / canvas.clientHeight, 0.1, 100 );
-				camera.position.set( 0, 0, -1.85 );
+				camera.position.set( 0, 0, 1.85 );
 				camera.aspect = canvas.clientWidth / canvas.clientHeight;
 				camera.updateProjectionMatrix();
                 camera.lookAt(  0, 0, 0  );
@@ -254,7 +252,7 @@
                     let keypoint_pos = new THREE.Vector3(
                         meshPosition.x + headspace_keypoint_pos.x,
                         meshPosition.y + headspace_keypoint_pos.y,
-                        -(meshPosition.z + headspace_keypoint_pos.z)
+                        meshPosition.z + headspace_keypoint_pos.z
                     ); 
                     
                     const projected_keypoint = new THREE.Vector3();
@@ -318,13 +316,13 @@
                     tween_scale.start();
                 }
 				if(euler_angles){
-					uniforms.ypr_coefs.value.set(euler_angles['z'], euler_angles['y'], euler_angles['x']);
+					uniforms.ypr_coefs.value.set(-euler_angles['z'], -euler_angles['y'], euler_angles['x']);
 				}
 
 				uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
-				uniforms.cam_position.value.set(camera.position.x,  camera.position.y, -camera.position.z);
+				uniforms.cam_position.value.set(-camera.position.x, camera.position.y, camera.position.z);
 				uniforms.cam_zoom.value = camera.zoom;
-                uniforms.sphere_center.value.set(mesh.position.x,  mesh.position.y, -mesh.position.z);
+                uniforms.sphere_center.value.set(-mesh.position.x, mesh.position.y, mesh.position.z);
                 uniforms.radius.value = mesh.geometry.parameters.radius * mesh.scale.x;
                 
 				renderer.render(scene, camera);
