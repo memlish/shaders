@@ -49,14 +49,13 @@
 
 			import Stats from './jsm/libs/stats.module.js';
 			import OURS_HEADSPACE_MEDIAPIPE_LANDMARKS from './our_headspace_mediapipe_landmarks.js'
-			// import { GUI } from './jsm/libs/lil-gui.module.min.js';
 
 			const videoElement = document.getElementsByClassName('input_video')[0];
 			const canvasElement = document.getElementsByClassName('output_canvas')[0];
 			const canvasCtx = canvasElement.getContext('2d');
 
 			let camera, stats, scene, renderer, uniforms, canvas, sphere_meshes, landmarks, our_mesh_multiplier;
-			let euler_angles, mesh, nose_pos, depth, plane_mesh, lmk_sphere_mesh, radius;
+			let euler_angles, mesh, head_center, depth, plane_mesh, lmk_sphere_mesh, radius;
             let head_scale = 1;
 
 			const container = document.createElement('div');
@@ -77,9 +76,9 @@
 					var _x = (landmarks[127].x + landmarks[356].x) / 2;
 					var _y = (landmarks[127].y + landmarks[356].y) / 2;
 					var _z = (landmarks[127].z + landmarks[356].z) / 2;
-                    nose_pos = new THREE.Vector3(_x, _y, _z);
-					// console.log(nose_pos)
-                    depth = Math.min(landmarks[1].z, landmarks[10].z, landmarks[18].z, landmarks[352].z, landmarks[123].z, nose_pos.z);
+                    head_center = new THREE.Vector3(_x, _y, _z);
+					// console.log(head_center)
+                    depth = Math.min(landmarks[1].z, landmarks[10].z, landmarks[18].z, landmarks[352].z, landmarks[123].z, head_center.z);
                 }
                 canvasCtx.restore();
                 // canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -263,7 +262,7 @@
                     keypoint_pos = keypoint_pos.projectOnPlane(planeNormal);
 
                     let keypoint_mediapipe = new THREE.Vector2(landmarks[i].x, landmarks[i].y);
-                    keypoint_mediapipe = keypoint_mediapipe.multiplyScalar(2.).addScalar(-1.)
+                    keypoint_mediapipe = keypoint_mediapipe.addScalar(-1.)
 
                     let keypoint_projected = new THREE.Vector2(keypoint_pos.x, keypoint_pos.y);
 
@@ -293,7 +292,6 @@
                 }
                 
                 our_mesh_multiplier /= keypoint_ids.length;
-                our_mesh_multiplier /= 2;
                 return our_mesh_multiplier;
             }
 
@@ -303,11 +301,11 @@
 				const canvas = renderer.domElement;
 				camera.aspect = canvas.clientWidth / canvas.clientHeight;
 
-				if (nose_pos){
+				if (head_center){
                     var local_pos = new THREE.Vector3(
-                        nose_pos.x * 2 - 1, 
-                        nose_pos.y * 2 - 1, 
-                        nose_pos.z
+                        head_center.x * 2 - 1, 
+                        head_center.y * 2 - 1, 
+                        head_center.z
                     );
                     var global_pos = plane_mesh.localToWorld(local_pos);
                     mesh.position.x = global_pos.x * camera.aspect / 2;
@@ -315,8 +313,8 @@
 
                     const planeNormal = new THREE.Vector3(0.,0, 1.);
                     
-                    head_scale= getMeshScaleMultiplier(euler_angles, mesh.position, planeNormal, mesh.geometry.parameters.radius);
-                    console.log('head_scale', head_scale, 'our_mesh_multiplier', our_mesh_multiplier)
+                    head_scale = getMeshScaleMultiplier(euler_angles, mesh.position, planeNormal, mesh.geometry.parameters.radius);
+                    // console.log('head_scale', head_scale, 'our_mesh_multiplier', our_mesh_multiplier)
                     tween_scale.start();
                 }
 				if(euler_angles){
